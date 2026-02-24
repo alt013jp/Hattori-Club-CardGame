@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HATTORI CLUB CARD GAME ～ハットリ会会長決定戦～</title>
+    <meta name="description" content="遊戯王風オリジナルカードゲーム。対戦モードとカード検証モードを搭載。">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <!-- ========== タイトル画面 ========== -->
+    <div id="title-screen">
+        <div>
+            <h1 class="title-logo">HATTORI CLUB<br>CARD GAME</h1>
+            <p class="title-sub">～ハットリ会会長決定戦～</p>
+        </div>
+        <div class="mode-buttons">
+            <button class="btn-mode btn-battle" id="btn-normal-game" onclick="startNormalGame()">
+                ⚔️ 通常対戦モード<br>
+                <small style="font-size:0.7rem;opacity:0.8">2プレイヤー交互対戦</small>
+            </button>
+            <button class="btn-mode btn-local" id="btn-local-game" onclick="startLocalGame()"
+                style="background: linear-gradient(135deg, #FF9800, #F57C00);">
+                🔥 ローカル対戦<br>
+                <small style="font-size:0.7rem;opacity:0.8">1台で交互プレイ</small>
+            </button>
+            <button class="btn-mode btn-online" id="btn-online-game" onclick="showOnlineModal()"
+                style="background: linear-gradient(135deg, #00b4d8, #0077b6);">
+                🌐 オンライン対戦<br>
+                <small style="font-size:0.7rem;opacity:0.8">LAN内の2人対戦</small>
+            </button>
+            <button class="btn-mode btn-test" id="btn-test-game" onclick="startTestGame()">
+                🧪 カード検証モード<br>
+                <small style="font-size:0.7rem;opacity:0.8">カード効果・システム確認</small>
+            </button>
+            <button class="btn-mode btn-gallery" id="btn-card-gallery" onclick="showCardGallery()">
+                📚 カード一覧<br>
+                <small style="font-size:0.7rem;opacity:0.8">全カードを確認</small>
+            </button>
+        </div>
+    </div>
+
+    <!-- ========== ゲーム画面 ========== -->
+    <div id="game-screen">
+
+        <!-- ヘッダー -->
+        <div class="game-header">
+            <div id="turn-badge">ターン 1 | プレイヤー1 のターン</div>
+            <div id="phase-display">ドローフェイズ</div>
+            <div id="mode-badge" class="mode-badge normal-mode">⚔️ 対戦モード</div>
+        </div>
+
+        <!-- フィールドエリア -->
+        <div class="field-area">
+
+            <!-- プレイヤー1パネル（左） -->
+            <div class="player-panel" id="p1-panel">
+                <div class="player-name" id="p1-name">プレイヤー1</div>
+                <div class="lp-display">
+                    <span class="lp-label">LIFE POINTS</span>
+                    <span class="lp-value" id="p1-lp">4000</span>
+                </div>
+                <div id="p1-graveyard"></div>
+            </div>
+
+            <!-- プレイヤー1フィールド -->
+            <div class="field-zones">
+                <div class="field-zone-wrapper">
+                    <div class="zone-label">【P1】モンスター</div>
+                    <div class="field-zone" id="p1-monster-zone">
+                        <div class="empty-zone">空き</div>
+                    </div>
+                </div>
+                <div class="field-zone-wrapper">
+                    <div class="zone-label">【P1】魔法</div>
+                    <div class="field-zone" id="p1-magic-zone">
+                        <div class="empty-zone">空き</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- プレイヤー2フィールド -->
+            <div class="field-zones">
+                <div class="field-zone-wrapper">
+                    <div class="zone-label">【P2】モンスター</div>
+                    <div class="field-zone" id="p2-monster-zone">
+                        <div class="empty-zone">空き</div>
+                    </div>
+                </div>
+                <div class="field-zone-wrapper">
+                    <div class="zone-label">【P2】魔法</div>
+                    <div class="field-zone" id="p2-magic-zone">
+                        <div class="empty-zone">空き</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- プレイヤー2パネル（右） -->
+            <div class="player-panel p2-panel" id="p2-panel">
+                <div class="player-name" id="p2-name">プレイヤー2</div>
+                <div class="lp-display">
+                    <span class="lp-label">LIFE POINTS</span>
+                    <span class="lp-value" id="p2-lp">4000</span>
+                </div>
+                <div id="p2-graveyard"></div>
+            </div>
+
+        </div><!-- /field-area -->
+
+        <!-- 手札エリア -->
+        <div class="hand-section">
+            <div id="hand-area">
+                <div class="hand-label">🃏 手札</div>
+                <div class="hand-cards"></div>
+            </div>
+        </div>
+
+        <!-- コントロールバー -->
+        <div class="controls-bar">
+            <button class="btn btn-attack" id="btn-attack" onclick="declareAttack()">⚔️ 攻撃宣言</button>
+            <button class="btn btn-end-turn" id="btn-end-turn" onclick="endTurn()">✅ ターン終了</button>
+            <button class="btn btn-back" onclick="goToTitle()">🏠 タイトルへ</button>
+
+            <div class="dice-section">
+                <span class="dice-label">ダイス</span>
+                <span id="dice-display">🎲</span>
+            </div>
+        </div>
+
+        <!-- ログ -->
+        <div class="log-section">
+            <div class="log-header">📋 発動ログ</div>
+            <div id="log-container"></div>
+        </div>
+
+    </div><!-- /game-screen -->
+
+    <!-- ========== ターン開始インジケータ ========== -->
+    <div id="turn-indicator-overlay" class="turn-indicator-overlay" style="display: none;">
+        <div id="turn-indicator-text" class="turn-indicator-text"></div>
+    </div>
+
+    <!-- ========== プレイヤー切替オーバーレイ ========== -->
+    <div id="player-switch-overlay">
+        <div class="switch-msg" id="switch-msg">プレイヤー2 のターンです</div>
+        <button class="btn btn-end-turn" onclick="dismissPlayerSwitch()">OK（準備できたら）</button>
+    </div>
+
+    <!-- ========== ゲームオーバー ========== -->
+    <div id="gameover-overlay">
+        <div id="gameover-msg">勝者：プレイヤー1</div>
+        <div class="gameover-buttons">
+            <button class="btn btn-battle" onclick="startNormalGame()">⚔️ もう一度（対戦）</button>
+            <button class="btn btn-test" onclick="startTestGame()">🧪 もう一度（テスト）</button>
+            <button class="btn btn-back" onclick="goToTitle()">🏠 タイトルへ</button>
+        </div>
+    </div>
+
+    <!-- ターン交代オーバーレイ (ローカル対戦用) -->
+    <div id="turn-overlay" class="turn-overlay" style="display: none;">
+        <div class="turn-overlay-content">
+            <h2 id="turn-overlay-title">プレイヤー交代</h2>
+            <p>次のプレイヤーに交代してください</p>
+            <button id="btn-turn-start" class="btn-large">ターン開始</button>
+        </div>
+    </div>
+
+    <!-- 汎用カード選択モーダル -->
+    <div id="card-select-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <h2 id="card-select-title">カードを選択</h2>
+            <div id="card-select-list" class="graveyard-list"></div>
+            <button id="btn-card-select-cancel" class="btn-close">キャンセル</button>
+        </div>
+    </div>
+
+    <!-- ========== オンライン対戦モーダル ========== -->
+    <div id="online-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content" style="max-width:420px;">
+            <h2>🌐 オンライン対戦</h2>
+            <p style="font-size:0.8rem;opacity:0.7;margin-bottom:1rem;">
+                専用サーバーを介して対戦します。<br>ホスト側のPCでサーバー(start-server.bat)を起動してください。</p>
+
+            <!-- 作成・参加選択 -->
+            <div id="online-create-section">
+                <!-- 接続先URL入力 (ローカルIP等を指定可能に) -->
+                <input id="online-server-url" type="text" placeholder="ホストのIPアドレス (例: 192.168.0.x)"
+                    value="http://localhost:8080"
+                    style="width:100%;padding:0.5rem;border-radius:6px;border:1px solid #555;background:#1a1a2e;color:#fff;font-size:0.9rem;text-align:center;margin-bottom:0.5rem;">
+                <button class="btn btn-battle" style="width:100%;margin-bottom:0.5rem;" onclick="onlineCreateRoom()">🤝
+                    ルームを作る（ホスト）</button>
+                <hr style="border-color:#444;margin:0.75rem 0;">
+                <div style="display:flex;gap:0.5rem;margin-bottom:0.5rem;">
+                    <input id="online-room-input" type="text" maxlength="4" placeholder="4桁のコード"
+                        style="flex:1;padding:0.5rem;border-radius:6px;border:1px solid #555;background:#1a1a2e;color:#fff;font-size:1.1rem;text-align:center;letter-spacing:4px;">
+                    <button class="btn btn-end-turn" onclick="onlineJoinRoom()">参加</button>
+                </div>
+            </div>
+
+            <!-- ホスト: 待機画面 -->
+            <div id="online-waiting-section" style="display:none;text-align:center;">
+                <p>相手の接続を待っています...</p>
+                <div id="online-code-display"
+                    style="font-size:3rem;font-weight:bold;letter-spacing:8px;color:#00b4d8;margin:0.5rem 0;"></div>
+                <p style="font-size:0.75rem;opacity:0.7">このコードを相手に教えてください</p>
+                <button class="btn btn-back" style="margin-top:1rem;" onclick="cancelOnlineHosting()">キャンセル</button>
+            </div>
+
+            <!-- ゲスト: 待機画面 -->
+            <div id="online-guest-waiting" style="display:none;text-align:center;">
+                <p>ホストに接続中...</p>
+                <div class="dice-anim">⏳</div>
+            </div>
+
+            <button class="btn-close" style="margin-top:1rem;width:100%;"
+                onclick="document.getElementById('online-modal').style.display='none'">✖ 閉じる</button>
+        </div>
+    </div>
+
+    <!-- ゲスト用アクションバー -->
+    <div id="guest-action-bar" style="display:none;
+        position:fixed;bottom:0;left:0;right:0;background:rgba(0,20,40,0.95);
+        padding:0.5rem 1rem;display:flex;gap:0.5rem;align-items:center;
+        border-top:2px solid #00b4d8;z-index:500;flex-wrap:wrap;"></div>
+
+    <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+    <script src="cards.js"></script>
+    <script src="game.js"></script>
+
+</body>
+
+</html>
