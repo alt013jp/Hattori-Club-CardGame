@@ -1,0 +1,263 @@
+/* Base Reset & Fonts */
+:root {
+    --bg-color: #ffffff;
+    --text-color: #111111;
+    --accent-color: #000000;
+    --gray: #888888;
+    --font-main: 'Helvetica Neue', Arial, sans-serif;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: var(--font-main);
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    line-height: 1.6;
+    overflow-x: hidden;
+}
+
+a {
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
+}
+
+/* Header / Hero */
+header {
+    text-align: center;
+    padding: 100px 20px;
+    background-color: #fff;
+}
+
+.site-title {
+    font-size: 3rem;
+    letter-spacing: 5px;
+    font-weight: 700;
+    margin-bottom: 20px;
+    text-transform: uppercase;
+}
+
+.site-desc {
+    font-size: 1rem;
+    color: var(--gray);
+    letter-spacing: 1px;
+}
+
+/* Sections */
+section {
+    padding: 80px 5%;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.section-title {
+    font-size: 2rem;
+    text-align: center;
+    margin-bottom: 60px;
+    font-weight: 300;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    position: relative;
+}
+
+.section-title::after {
+    content: '';
+    display: block;
+    width: 40px;
+    height: 2px;
+    background: #000;
+    margin: 20px auto 0;
+}
+
+/* Member List */
+.member-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 40px;
+}
+
+.member-card {
+    display: block;
+    /* Make sure anchor behaves like block */
+    text-align: center;
+    transition: transform 0.3s ease;
+}
+
+.member-card:hover {
+    transform: translateY(-5px);
+}
+
+.card-image-wrapper {
+    position: relative;
+    width: 100%;
+    padding-top: 125%;
+    /* Aspect Ratio 4:5 approx */
+    overflow: hidden;
+    background: #f0f0f0;
+    margin-bottom: 20px;
+}
+
+.card-image-wrapper img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: top center;
+    transition: transform 0.5s ease, filter 0.3s ease;
+    filter: grayscale(100%);
+}
+
+.member-card:hover .card-image-wrapper img {
+    transform: scale(1.05);
+    filter: grayscale(0%);
+}
+
+.member-name {
+    font-size: 1.2rem;
+    font-weight: 500;
+    letter-spacing: 2px;
+}
+
+/* Songs */
+.song-list {
+    list-style: none;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.song-item {
+    border-bottom: 1px solid #eee;
+    padding: 60px 0;
+    display: flex;
+    align-items: center;
+    transition: background 0.3s;
+    gap: 40px;
+}
+
+.song-item:hover {
+    background: #fafafa;
+    padding-left: 20px;
+}
+
+.song-thumb {
+    width: 300px;
+    height: auto;
+    object-fit: cover;
+    border-radius: 4px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.song-info {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+}
+
+.song-title {
+    font-size: 1.1rem;
+    font-weight: 500;
+    margin-bottom: 5px;
+}
+
+.song-link {
+    font-size: 0.9rem;
+    text-decoration: underline;
+    color: var(--gray);
+    align-self: flex-start;
+}
+
+.song-link:hover {
+    color: #000;
+}
+
+/* Footer */
+footer {
+    text-align: center;
+    padding: 40px;
+    border-top: 1px solid #eee;
+    font-size: 0.8rem;
+    color: var(--gray);
+    margin-top: 50px;
+}
+
+/* Profile Page */
+.profile-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    max-width: 800px;
+    margin: 0 auto;
+    padding-top: 50px;
+}
+
+.profile-image-large {
+    width: 100%;
+    max-width: 500px;
+    height: auto;
+    aspect-ratio: 4/5;
+    object-fit: cover;
+    margin-bottom: 40px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+.profile-info {
+    text-align: center;
+    max-width: 600px;
+}
+
+.profile-name-large {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 30px;
+    letter-spacing: 3px;
+}
+
+.profile-desc {
+    font-size: 1rem;
+    line-height: 2;
+    text-align: justify;
+    margin-bottom: 50px;
+}
+
+.back-link {
+    display: inline-block;
+    padding: 10px 30px;
+    border: 1px solid #000;
+    letter-spacing: 2px;
+    font-size: 0.9rem;
+    transition: all 0.3s;
+}
+
+.back-link:hover {
+    background: #000;
+    color: #fff;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .site-title {
+        font-size: 2rem;
+    }
+
+    .member-list {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+    }
+
+    .profile-name-large {
+        font-size: 2rem;
+    }
+
+    .song-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+}
