@@ -1537,98 +1537,225 @@ body::before {
     padding: 10px;
   }
 
+  /* ------------------------------- */
+  /* スマホ版 対戦画面レイアウト全体 */
+  /* ------------------------------- */
+  #game-screen {
+    padding: 0.2rem;
+    gap: 0.2rem;
+    overflow: hidden;
+  }
+
+  .game-header {
+    padding: 0.2rem 0.5rem;
+    font-size: 0.8rem;
+  }
+
+  #phase-display {
+    font-size: 0.9rem;
+    padding: 0.1rem 0.5rem;
+  }
+
   /* ゲームボード全体を縦長に */
   .game-board {
     flex-direction: column;
-    padding: 0.2rem;
-    gap: 0.5rem;
+    padding: 0;
+    gap: 0;
   }
 
-  /* プレイヤーエリア分割 */
-  .player-area {
+  .field-area {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 100%;
+    gap: 0.2rem;
+    overflow-y: auto;
+  }
+
+  /* プレイヤーエリア分割（P1=奥、P2=手前） */
+  .player-panel {
     width: 100%;
     min-height: auto;
-    padding: 0.5rem;
+    padding: 0.2rem 0.5rem;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
   }
 
-  /* フィールドのカード配置（横並びを詰める） */
+  .player-panel .lp-display {
+    margin: 0;
+    text-align: right;
+  }
+
+  .player-panel .player-name {
+    margin: 0;
+    font-size: 0.9rem;
+  }
+
+  /* 墓地をコンパクトに上/下に配置 */
+  .graveyard-zone {
+    position: static;
+    width: 30%;
+    margin-top: 0;
+    height: 40px;
+    font-size: 0.55rem;
+  }
+
+  /* ------------------------------- */
+  /* 向かい合わせのフィールド配置 */
+  /* ------------------------------- */
+  .field-zones {
+    display: flex;
+    flex: 1;
+    gap: 0.1rem;
+    justify-content: center;
+  }
+
+  /* 動的レイアウト制御クラス */
+  .area-opp-panel {
+    order: 1;
+  }
+
+  .area-opp-zones {
+    order: 2;
+    flex-direction: column-reverse;
+    align-items: center;
+  }
+
+  .area-me-zones {
+    order: 3;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .area-me-panel {
+    order: 4;
+  }
+
+  /* ゾーン自体の調整（横長・または狭く） */
+  .field-zone-wrapper {
+    width: 100%;
+    max-width: 380px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+    padding: 2px;
+  }
+
+  .zone-label {
+    font-size: 0.5rem;
+    margin: 0;
+  }
+
   .field-zone {
-    gap: 0.3rem;
-    margin: 0.5rem 0;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.2rem;
+    margin: 0;
+    min-height: 70px;
+    /* カードが無くても潰れないように */
   }
 
-  /* カードサイズをスマホ向けに縮小 */
+  /* カードサイズをスマホ向けに縮小・最適化 */
   .card {
-    width: 65px;
-    height: 95px;
+    width: 55px;
+    height: 80px;
     border-width: 1px;
     border-radius: 4px;
   }
 
   .card-header {
-    font-size: 0.55rem;
-    padding: 2px;
+    font-size: 0.45rem;
+    padding: 1px;
   }
 
   .card-emoji {
-    font-size: 0.8rem;
+    font-size: 0.7rem;
   }
 
   .card-name {
-    font-size: 0.5rem;
+    font-size: 0.4rem;
   }
 
   .card-effect {
-    font-size: 0.4rem;
+    font-size: 0.35rem;
     padding: 1px;
     display: -webkit-box;
-    -webkit-line-clamp: 3;
-    line-clamp: 3;
+    -webkit-line-clamp: 2;
+    /* 面積が狭いので2行に制限 */
+    line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
 
-  /* 手札エリア（折り返しを許可して画面内に収める） */
-  .hand-cards {
-    flex-wrap: wrap;
+  .card-atk {
+    font-size: 0.5rem;
+    padding: 1px;
+  }
+
+  /* ------------------------------- */
+  /* 特殊：相手の裏側手札表示用UI */
+  /* ------------------------------- */
+  .opp-hand-visual {
+    display: flex;
     justify-content: center;
+    gap: -15px;
+    /* カードを少し重ねる */
+    margin: 0.2rem 0;
+  }
+
+  .opp-hand-visual .card {
+    width: 40px;
+    height: 60px;
+    margin-left: -20px;
+    box-shadow: -2px 0 5px rgba(0, 0, 0, 0.5);
+  }
+
+  .opp-hand-visual .card:first-child {
+    margin-left: 0;
+  }
+
+  /* 手札エリア（折り返しを許可して画面内に収めちゃいけない場合もあるが今回は重ねてスクロールを維持させるのもあり。参考画像風に。） */
+  .hand-section {
+    padding: 0.2rem;
+  }
+
+  .hand-cards {
+    flex-wrap: nowrap;
+    /* 手札は横スクロール維持の方がポケカっぽい */
+    justify-content: flex-start;
     gap: 4px;
     padding: 2px;
   }
 
   .hand-header {
-    flex-direction: column;
+    flex-direction: row;
     gap: 5px;
-    align-items: stretch;
+    align-items: center;
+    font-size: 0.7rem;
   }
 
   /* その他UI要素の調整 */
-  .graveyard-zone {
-    position: static;
-    width: 100%;
-    margin-top: 5px;
-    height: 50px;
-    font-size: 0.6rem;
+  .lp-display {
+    font-size: 1.1rem;
   }
 
-  .lp-display {
-    font-size: 1rem;
+  .controls-bar {
+    padding: 0.2rem;
   }
 
   .action-bar {
-    flex-wrap: wrap;
-    gap: 0.3rem;
-    justify-content: center;
-    padding: 0.3rem;
+    flex-wrap: nowrap;
+    gap: 0.2rem;
+    justify-content: space-evenly;
+    padding: 0.2rem;
   }
 
   .btn {
-    padding: 6px 12px;
-    font-size: 0.8rem;
+    padding: 6px 8px;
+    font-size: 0.7rem;
   }
 
-  .log-container {
-    height: 80px;
-    font-size: 0.7rem;
+  .log-section {
+    display: none;
+    /* スマホの対戦中は邪魔になるため非表示にするか、モーダル等に隠す */
   }
 }

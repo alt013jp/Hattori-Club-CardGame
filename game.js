@@ -178,6 +178,7 @@ function startNormalGame() {
     document.getElementById('game-screen').style.display = 'flex';
     document.getElementById('gameover-overlay').style.display = 'none';
     clearLog();
+    updateLayoutDirection(true); // P1を手前(下)に
     initGame(MODE.NORMAL);
 }
 
@@ -186,6 +187,7 @@ function startTestGame() {
     document.getElementById('game-screen').style.display = 'flex';
     document.getElementById('gameover-overlay').style.display = 'none';
     clearLog();
+    updateLayoutDirection(true); // P1を手前(下)に
     initGame(MODE.TEST);
 }
 
@@ -194,6 +196,8 @@ function startLocalGame() {
     document.getElementById('game-screen').style.display = 'flex';
     document.getElementById('gameover-overlay').style.display = 'none';
     clearLog();
+    // ローカルPVPは開始時はP1から
+    updateLayoutDirection(true);
     initGame(MODE.LOCAL_PVP);
 }
 
@@ -394,6 +398,9 @@ async function endTurn() {
 
     if (gs.mode === MODE.LOCAL_PVP) {
         // ローカル対戦：手札を見せないようにオーバーレイを表示
+        // スマホ向かい合わせのために、現在ターンプレイヤーを手前（下）にする
+        updateLayoutDirection(gs.currentPlayer === gs.player1);
+
         // 手札エリアを一時的にクリア（renderAllで再描画されるまで）
         const handEl = document.getElementById('hand-area');
         if (handEl) handEl.innerHTML = '';
@@ -742,6 +749,53 @@ function renderAll() {
     } else {
         if (atkBtn) atkBtn.style.display = 'inline-block';
         if (endBtn) endBtn.style.display = 'inline-block';
+    }
+
+    // スマホ向け：相手の手札の視覚化
+    // 自分がP1なら相手はP2、自分がP2なら相手はP1
+    if (window.innerWidth <= 768) {
+        if (gs._isOnlineHost || gs.mode === MODE.NORMAL || gs.mode === MODE.TEST) {
+            // ローカルでもとりあえず相手の枚数を表示。ホスト時は相手=p2
+            renderOppHandVisual(gs.player2, 'p2');
+            renderOppHandVisual(gs.player1, 'p1', true); // 自分側はクリア
+        }
+        if (gs.mode === MODE.LOCAL_PVP) {
+            // ローカルPVPは手前がcurrentPlayer、奥がopponentPlayer
+            renderOppHandVisual(gs.opponentPlayer, gs.currentPlayer === gs.player1 ? 'p2' : 'p1');
+            renderOppHandVisual(gs.currentPlayer, gs.currentPlayer === gs.player1 ? 'p1' : 'p2', true);
+        }
+    } else {
+        // PCレイアウト用にクリア
+        renderOppHandVisual(gs.player1, 'p1', true);
+        renderOppHandVisual(gs.player2, 'p2', true);
+    }
+}
+
+function renderOppHandVisual(player, prefix, clearOnly = false) {
+    const panel = document.getElementById(`${prefix}-panel`);
+    if (!panel) return;
+    let visContainer = panel.querySelector('.opp-hand-visual');
+    if (clearOnly) {
+        if (visContainer) visContainer.remove();
+        return;
+    }
+
+    if (!visContainer) {
+        visContainer = document.createElement('div');
+        visContainer.className = 'opp-hand-visual';
+        // パネル内の名前の次あたりに挿入
+        const nameEl = document.getElementById(`${prefix}-name`);
+        if (nameEl) nameEl.after(visContainer);
+        else panel.appendChild(visContainer);
+    }
+    visContainer.innerHTML = '';
+
+    // 裏向きカードを枚数分生成
+    for (let i = 0; i < player.hand.length; i++) {
+        const cardEl = document.createElement('div');
+        cardEl.className = 'card card-magic';
+        cardEl.innerHTML = `<div style="font-size:1.5rem;text-align:center;margin-top:10px;">🃏</div>`;
+        visContainer.appendChild(cardEl);
     }
 }
 
@@ -1233,6 +1287,39 @@ function cancelOnlineHosting() {
     document.getElementById('online-create-section').style.display = 'block';
 }
 
+// ===============================
+// レイアウト方向制御 (スマホ向け向かい合わせUI用)
+// ===============================
+function updateLayoutDirection(isP1Me) {
+    const p1Panel = document.getElementById('p1-panel');
+    if (!p1Panel) return;
+    const p1Zones = p1Panel.nextElementSibling; // div.field-zones
+    const p2Zones = p1Zones.nextElementSibling; // div.field-zones
+    const p2Panel = document.getElementById('p2-panel');
+
+    p1Panel.classList.remove('area-me-panel', 'area-opp-panel');
+    p1Zones.classList.remove('area-me-zones', 'area-opp-zones');
+    p2Panel.classList.remove('area-me-panel', 'area-opp-panel');
+    p2Zones.classList.remove('area-me-zones', 'area-opp-zones');
+
+    if (isP1Me) {
+        p1Panel.classList.add('area-opp-panel'); // p1Panelは上部へ? いいえ、isP1MeならP1が手前なのでp1がme...
+        // 待って、HTMLのデフォルトはP1, P1Zones, P2Zones, P2の順。
+        // 上(1)がopp, 下(4)がmeにしたい。
+        // つまり isP1Me (自分がP1) なら、P1がme。
+        p1Panel.classList.add('area-me-panel');
+        p1Zones.classList.add('area-me-zones');
+        p2Panel.classList.add('area-opp-panel');
+        p2Zones.classList.add('area-opp-zones');
+    } else {
+        // 自分がP2なら、P2が手前(me)になる
+        p1Panel.classList.add('area-opp-panel');
+        p1Zones.classList.add('area-opp-zones');
+        p2Panel.classList.add('area-me-panel');
+        p2Zones.classList.add('area-me-zones');
+    }
+}
+
 // ===== サーバー接続 =====
 function _connectOnlineServer(serverUrl) {
     return new Promise((resolve, reject) => {
@@ -1403,6 +1490,7 @@ function _startAsGuest() {
     document.getElementById('title-screen').style.display = 'none';
     document.getElementById('game-screen').style.display = 'flex';
     _lastGuestCpIdx = -1;
+    updateLayoutDirection(false); // ゲストはP2なのでP2を手前(下)に
     // game_stateが届くまで空のスクリーンを表示
 }
 
@@ -1449,10 +1537,34 @@ function _serializeState() {
     };
 }
 
+function _renderGuestOppHandVisual(prefix, count, clearOnly = false) {
+    const panel = document.getElementById(`${prefix}-panel`);
+    if (!panel) return;
+    let visContainer = panel.querySelector('.opp-hand-visual');
+    if (clearOnly) {
+        if (visContainer) visContainer.remove();
+        return;
+    }
+    if (!visContainer) {
+        visContainer = document.createElement('div');
+        visContainer.className = 'opp-hand-visual';
+        const nameEl = document.getElementById(`${prefix}-name`);
+        if (nameEl) nameEl.after(visContainer);
+        else panel.appendChild(visContainer);
+    }
+    visContainer.innerHTML = '';
+    for (let i = 0; i < count; i++) {
+        const cardEl = document.createElement('div');
+        cardEl.className = 'card card-magic';
+        cardEl.innerHTML = `<div style="font-size:1.5rem;text-align:center;margin-top:10px;">🃏</div>`;
+        visContainer.appendChild(cardEl);
+    }
+}
+
 // ===== ゲスト: アクション送信 =====
-function _sendOnlineAction(action) {
+function _sendOnlineAction(actionObj) {
     if (!_socket) return;
-    _socket.emit('action', { action });
+    _socket.emit('action', { action: actionObj });
 }
 
 // ===== ホスト: ゲストのアクション実行 =====
@@ -1578,6 +1690,15 @@ function _renderAsGuest(state) {
         handEl.appendChild(cardsContainer);
 
         if (!wasOpen) handEl.classList.add('hand-closed');
+    }
+
+    // スマホ向け：相手の手札の視覚化（ゲスト側は相手=p1）
+    if (window.innerWidth <= 768) {
+        _renderGuestOppHandVisual('p1', state.p1.hand.length);
+        _renderGuestOppHandVisual('p2', 0, true); // 自分側はクリア
+    } else {
+        _renderGuestOppHandVisual('p1', 0, true);
+        _renderGuestOppHandVisual('p2', 0, true);
     }
 
     // アクションバー
