@@ -1313,7 +1313,11 @@ function _setupOnlineHandlers() {
 // ===== ルーム作成 (ホスト) =====
 async function onlineCreateRoom() {
     const input = document.getElementById('online-server-url');
-    const url = (input && input.value.trim()) || 'http://localhost:8080';
+    let url = (input && input.value.trim()) || '';
+    if (!url || url === 'http://localhost:8080') {
+        url = window.location.protocol.startsWith('http') ? window.location.origin : 'http://localhost:8080';
+    }
+
     try {
         await _connectOnlineServer(url);
         _onlineRole = 'host';
@@ -1329,7 +1333,11 @@ async function onlineJoinRoom() {
     const code = document.getElementById('online-room-input')?.value?.trim();
     if (!code || code.length !== 4) { alert('4桁のルームコードを入力してください'); return; }
     const input = document.getElementById('online-server-url');
-    const url = (input && input.value.trim()) || 'http://localhost:8080';
+    let url = (input && input.value.trim()) || '';
+    if (!url || url === 'http://localhost:8080') {
+        url = window.location.protocol.startsWith('http') ? window.location.origin : 'http://localhost:8080';
+    }
+
     try {
         await _connectOnlineServer(url);
         _onlineRole = 'guest';
