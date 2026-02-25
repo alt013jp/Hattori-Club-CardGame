@@ -11,6 +11,15 @@
 
 <body>
 
+    <!-- ========== スマホ縦画面警告 ========== -->
+    <div id="portrait-overlay">
+        <div class="icon">📱🔄</div>
+        <h2>デバイスを横向きにしてください</h2>
+        <p style="margin-top:10px; font-size: 0.9rem; opacity: 0.8;">
+            このゲームは横画面プレイ専用です。<br>スマートフォンの画面回転ロックを解除し、<br>横向きにしてお楽しみください。
+        </p>
+    </div>
+
     <!-- ========== タイトル画面 ========== -->
     <div id="title-screen">
         <div>
@@ -124,8 +133,6 @@
 
         <!-- コントロールバー -->
         <div class="controls-bar" style="pointer-events:none;">
-            <button class="btn btn-attack" id="btn-attack" onclick="declareAttack()" style="pointer-events:auto;">⚔️
-                攻撃宣言</button>
             <button class="btn btn-end-turn" id="btn-end-turn" onclick="endTurn()" style="pointer-events:auto;">✅
                 ターン終了</button>
 

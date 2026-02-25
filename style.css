@@ -334,12 +334,13 @@ body::before {
 
 .lp-value {
   font-family: 'Space Grotesk', 'Noto Sans JP', sans-serif;
-  font-size: 1.8rem;
+  font-size: 1.2rem;
+  /* LPサイズを縮小・コンパクト化 */
   font-weight: 900;
   color: var(--accent-green);
   display: block;
   transition: color 0.3s;
-  text-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
+  text-shadow: 0 0 5px rgba(0, 0, 0, 0.8);
 }
 
 /* 墓地 */
@@ -389,21 +390,21 @@ body::before {
   width: 85px;
   /* 遊戯王マスターデュエル風の正方形 */
   height: 85px;
-  border: 2px dashed rgba(255, 255, 255, 0.1);
-  /* ほとんど見えないようにする */
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  /* 置き場所がわかるように白系の枠を設定 */
   border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: transparent;
-  /* 背景画像の枠を活かすため透明化 */
+  background: rgba(255, 255, 255, 0.05);
+  /* うっすら白の下地で枠を強調 */
   transition: border-color 0.3s, background 0.3s, box-shadow 0.3s;
   position: relative;
 }
 
 .field-slot:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.6);
 }
 
 .field-slot:has(.card) {
@@ -1758,13 +1759,13 @@ body::before {
 
 /* ------------------------------- */
 /* 対戦画面レイアウト全体 */
-/* マスターデュエル風 背景画像＆レイアウト */
+/* シンプルなダークグラデーション背景 */
 /* ------------------------------- */
 #game-screen {
   padding: 0;
   gap: 0;
   overflow: hidden;
-  background: url('site/images/members/field.png') center/cover no-repeat;
+  background: linear-gradient(to bottom, #0f172a, #1e293b);
 }
 
 .game-header {
@@ -1797,11 +1798,11 @@ body::before {
   left: 20px;
 }
 
-/* 自分のLPは右下（固定配置化） */
+/* 自分のLPは左下へ移動し相手側と向かい合わせ対称にする */
 .area-me-panel {
   bottom: 120px;
   /* 手札の上 */
-  right: 10px;
+  left: 20px;
 }
 
 .player-panel .lp-display {
@@ -1814,18 +1815,19 @@ body::before {
 
 /* 墓地をコンパクトに上/下に配置 */
 .graveyard-zone {
-  width: 40px;
-  height: 60px;
+  width: 60px;
+  height: 80px;
   position: absolute;
-  right: 10px;
-  background: rgba(0, 0, 0, 0.1);
-  border: 1px dashed rgba(0, 0, 0, 0.3);
-  border-radius: 4px;
+  right: 15px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 2px dashed rgba(255, 255, 255, 0.5);
+  /* 墓地の枠を白破線で強調 */
+  border-radius: 6px;
   display: flex;
   justify-content: center;
   align-items: center;
-  font-size: 0.5rem;
-  color: #333;
+  font-size: 0.7rem;
+  color: #fff;
 }
 
 /* ------------------------------- */
@@ -2147,4 +2149,85 @@ body::before {
 .log-section {
   display: none;
   /* ハンバーガー内モーダルに移動 */
+}
+
+/* ------------------------------- */
+/* スマホ縦画面警告オーバーレイ */
+/* ------------------------------- */
+#portrait-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: #000;
+  color: #fff;
+  z-index: 99999;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  text-align: center;
+  padding: 20px;
+}
+
+#portrait-overlay .icon {
+  font-size: 4rem;
+  margin-bottom: 20px;
+  animation: rotate-phone 2s infinite ease-in-out;
+}
+
+@keyframes rotate-phone {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  50% {
+    transform: rotate(-90deg);
+  }
+
+  100% {
+    transform: rotate(-90deg);
+  }
+}
+
+@media screen and (orientation: portrait) and (max-width: 768px) {
+  #portrait-overlay {
+    display: flex;
+  }
+}
+
+/* ------------------------------- */
+/* 攻撃対象選択モード(Targeting Mode) */
+/* ------------------------------- */
+.targeting-mode .area-opp-zones .field-slot:has(.card-monster) {
+  animation: target-pulse 1.5s infinite;
+  cursor: crosshair !important;
+}
+
+.targeting-mode .area-opp-zones .card-monster {
+  cursor: crosshair !important;
+}
+
+@keyframes target-pulse {
+  0% {
+    box-shadow: 0 0 10px rgba(255, 50, 50, 0.5);
+    border-color: rgba(255, 50, 50, 0.5);
+  }
+
+  50% {
+    box-shadow: 0 0 25px rgba(255, 0, 0, 1);
+    border-color: rgba(255, 0, 0, 1);
+  }
+
+  100% {
+    box-shadow: 0 0 10px rgba(255, 50, 50, 0.5);
+    border-color: rgba(255, 50, 50, 0.5);
+  }
+}
+
+.targeting-mode .area-me-zones {
+  opacity: 0.5;
+  pointer-events: none;
+  /* 選択中は自分のカード操作をブロック */
 }

@@ -178,6 +178,7 @@ class GameState {
 let gs = null;
 let pendingSwitchCallback = null;
 let _lastGuestCpIdx = -1; // ゲスト用のターン進行トラッキング
+let _awaitingAttackTargetIdx = -1; // 攻撃対象選択中の自分のモンスロット(-1で非アクティブ)
 
 // ===============================
 // タイトル画面から呼ばれる初期化関数
@@ -552,7 +553,7 @@ async function useMagicCard(card, player, slotIdx) {
 // ===============================
 // 攻撃宣言 (Async)
 // ===============================
-async function declareAttack() {
+async function declareAttack(atkSlot, defSlot = -1) {
     if (!gs || gs.gameOver) return;
     if (gs.phase !== PHASE.MAIN && gs.phase !== PHASE.BATTLE) {
         gs.log('⚠ メインフェイズかバトルフェイズのみ攻撃できます');
@@ -571,16 +572,15 @@ async function declareAttack() {
     const attacker = gs.currentPlayer;
     const defender = gs.getOpponent(attacker);
 
-    // 暫定：一番左（index 0）に近いモンスターを探す
-    const atkSlot = attacker.fieldMonster.findIndex(m => m !== null);
-    if (atkSlot === -1) {
-        gs.log('⚠ フィールドに攻撃できるモンスターがいません');
+    if (atkSlot === undefined || atkSlot === -1) {
+        gs.log('⚠ 攻撃するモンスターが選択されていません');
         return;
     }
-    const defSlot = defender.fieldMonster.findIndex(m => m !== null);
 
     const atkMonster = attacker.fieldMonster[atkSlot];
     const defMonster = defSlot !== -1 ? defender.fieldMonster[defSlot] : null;
+
+    if (!atkMonster) return;
 
     gs.phase = PHASE.BATTLE;
     renderPhase(gs.phase);
@@ -786,6 +786,13 @@ function showFloatingDamage(amount, isPlayer1, isDirectAttack = false, slotIdx =
 // ===============================
 function renderAll() {
     if (!gs) return;
+
+    if (_awaitingAttackTargetIdx !== -1) {
+        document.getElementById('game-screen').classList.add('targeting-mode');
+    } else {
+        document.getElementById('game-screen').classList.remove('targeting-mode');
+    }
+
     renderPlayerInfo(gs.player1, 'p1');
     renderPlayerInfo(gs.player2, 'p2');
 
@@ -999,12 +1006,71 @@ function createCardElement(card, idx, inHand = false) {
         // 使用可能な手札：詳細画面を開き、そこから使用する（全デバイス共通）
         el.addEventListener('click', (e) => {
             e.stopPropagation();
+            if (_awaitingAttackTargetIdx !== -1) {
+                _awaitingAttackTargetIdx = -1;
+                renderAll();
+            }
             showCardDetail(card, () => useCard(idx), '✨ 使用 / 召喚する');
         });
     } else {
-        // 使用不可な手札、もしくはフィールドのカード（詳細表示）
+        // 使用不可な手札、もしくはフィールドのカード
         el.addEventListener('click', (e) => {
             e.stopPropagation();
+
+            if (!inHand) {
+                const owner = el.dataset.owner;
+                const slot = parseInt(el.dataset.slotIndex, 10);
+
+                // --- ターゲット選択中 ---
+                if (_awaitingAttackTargetIdx !== -1) {
+                    if (owner === 'opp' && card.type === CARD_TYPE.MONSTER) {
+                        // 相手のモンスターを指定して攻撃
+                        const atkSlot = _awaitingAttackTargetIdx;
+                        _awaitingAttackTargetIdx = -1;
+                        renderAll();
+                        // ゲストの場合はサーバーに送信、それ以外はローカル処理
+                        if (_onlineRole === 'guest') {
+                            _sendOnlineAction({ type: 'attack', atkSlot: atkSlot, defSlot: slot });
+                        } else {
+                            declareAttack(atkSlot, slot);
+                        }
+                        return;
+                    } else {
+                        // 対象不適格（自分のモンスターや魔法等）ならキャンセル
+                        _awaitingAttackTargetIdx = -1;
+                        renderAll();
+                        gs.log('攻撃対象の選択をキャンセルしました');
+                        return; // 詳細も出さずリセット
+                    }
+                }
+
+                // --- ターゲット選択中でない場合のフィールドのカード ---
+                const inMainPhase = gs && (gs.phase === PHASE.MAIN || gs.phase === PHASE.BATTLE);
+                const canAttack = owner === 'me' && inMainPhase && card.type === CARD_TYPE.MONSTER && !gs.attackDeclaredThisTurn && !(gs.isFirstTurn && gs.currentPlayer === gs.firstPlayer);
+
+                if (canAttack) {
+                    showCardDetail(card, () => {
+                        const defender = gs.getOpponent(gs.currentPlayer);
+                        const hasOppMonsters = defender.fieldMonster.some(m => m !== null);
+
+                        if (!hasOppMonsters) {
+                            // 対象がいない場合は即ダイレクトアタック
+                            if (_onlineRole === 'guest') {
+                                _sendOnlineAction({ type: 'attack', atkSlot: slot, defSlot: -1 });
+                            } else {
+                                declareAttack(slot, -1);
+                            }
+                        } else {
+                            // 対象選択モードへ移行
+                            _awaitingAttackTargetIdx = slot;
+                            renderAll();
+                            gs.log('攻撃対象のモンスターを選択してください（タップ）');
+                        }
+                    }, '⚔️ 攻撃する');
+                    return;
+                }
+            }
+
             // 単なる詳細表示として開く（アクションボタンなし）
             showCardDetail(card);
         });
@@ -1062,6 +1128,7 @@ function renderFieldZone(zoneId, cards, player) {
             const cardEl = createCardElement(card, i, false);
             // 盤面上のカードに属性（インデックス等）を持たせておく
             cardEl.dataset.slotIndex = i;
+            cardEl.dataset.owner = (player === gs.currentPlayer) ? 'me' : 'opp';
 
             if (card.type === CARD_TYPE.MONSTER) {
                 // (現状はgetEffectiveAtkが単体想定なので一旦カード自身のatkを使うが、後ほど個別計算へ改修する)
@@ -1722,8 +1789,12 @@ function _executeGuestAction(action) {
             break;
         }
         case 'attack': {
-            if (gs.phase === PHASE.MAIN && gs.currentPlayer === gs.player2) {
-                declareAttack();
+            if ((gs.phase === PHASE.MAIN || gs.phase === PHASE.BATTLE) && gs.currentPlayer === gs.player2) {
+                const atkSlot = action.atkSlot !== undefined ? action.atkSlot : -1;
+                const defSlot = action.defSlot !== undefined ? action.defSlot : -1;
+                if (atkSlot !== -1) {
+                    declareAttack(atkSlot, defSlot);
+                }
             }
             break;
         }
