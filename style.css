@@ -387,9 +387,8 @@ body::before {
 
 /* モンスター・魔法それぞれのスロット枠 */
 .field-slot {
-  width: 85px;
-  /* 遊戯王マスターデュエル風の正方形 */
-  height: 85px;
+  width: 95px;
+  height: 120px;
   border: 2px solid rgba(255, 255, 255, 0.3);
   /* 置き場所がわかるように白系の枠を設定 */
   border-radius: 8px;
@@ -416,8 +415,8 @@ body::before {
 
 /* 魔法ゾーンとモンスターゾーンのサイズを等しくする */
 .magic-row .field-slot {
-  width: 85px;
-  height: 85px;
+  width: 95px;
+  height: 120px;
 }
 
 .empty-zone {
@@ -2673,13 +2672,13 @@ body::before {
 
 /* 左側：画像枠 */
 .image-window {
-  flex: 0 0 45%;
+  flex: 1;
+  /* 50% 50% to ensure right side space is fully used */
   display: flex;
   justify-content: center;
   align-items: center;
   overflow: hidden;
   padding: 10px;
-  /* 画像は枠いっぱいに近いが少し余白 */
   background: rgba(10, 10, 15, 0.95);
 }
 

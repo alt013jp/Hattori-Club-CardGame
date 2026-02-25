@@ -122,7 +122,53 @@ class GameState {
     drawCard(player) {
         const card = getRandomCard();
         player.hand.push(card);
+
+        // アニメーション再生（自身の場合のみ、または両方）
+        if (player === this.currentPlayer || !this._isOnlineHost) {
+            this.playDrawAnimation();
+        }
+
         return card;
+    }
+
+    playDrawAnimation() {
+        const animEl = document.createElement('div');
+        animEl.className = 'card card-back draw-anim-card';
+        // シンプルな裏面デザイン
+        animEl.style.background = 'linear-gradient(135deg, #111, #333)';
+        animEl.style.border = '2px solid #555';
+        animEl.style.display = 'flex';
+        animEl.style.justifyContent = 'center';
+        animEl.style.alignItems = 'center';
+        animEl.style.color = '#fff';
+        animEl.innerHTML = '<span style="font-size:3rem;">🎩</span>';
+        document.body.appendChild(animEl);
+
+        // 初期位置（右端中央あたりを想定）
+        animEl.style.position = 'fixed';
+        animEl.style.top = '30%';
+        animEl.style.right = '-20%';
+        animEl.style.zIndex = '10000';
+        animEl.style.transition = 'all 0.5s cubic-bezier(0.25, 1, 0.5, 1)';
+        animEl.style.transform = 'translate(-50%, -50%) scale(0.5) rotate(15deg)';
+        animEl.style.width = '100px';
+        animEl.style.height = '140px';
+        animEl.style.borderRadius = '8px';
+
+        // わずかな遅延の後にアニメーション先（画面下部中央）へ移動
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                animEl.style.top = '90%';
+                animEl.style.right = '50%';
+                animEl.style.transform = 'translate(50%, -50%) scale(0.8) rotate(-10deg)';
+                animEl.style.opacity = '0';
+            });
+        });
+
+        // 終了後にDOM削除
+        setTimeout(() => {
+            if (animEl.parentElement) animEl.parentElement.removeChild(animEl);
+        }, 500);
     }
 
     drawCardForTurn(player) {
@@ -551,6 +597,29 @@ async function useMagicCard(card, player, slotIdx) {
         player.graveyard.push(card);
     }
     triggerMagicCastEffect();
+}
+
+// ===============================
+// フィールド中央の攻撃ボタン処理
+// ===============================
+function triggerFieldAttack() {
+    if (!gs || gs.gameOver) return;
+    if (gs.phase !== PHASE.MAIN && gs.phase !== PHASE.BATTLE) {
+        gs.log('⚠ メインフェイズかバトルフェイズのみ攻撃できます');
+        return;
+    }
+
+    const attacker = gs.currentPlayer;
+    const defender = gs.getOpponent(attacker);
+
+    if (!attacker.fieldMonster[0]) {
+        gs.log('⚠ 攻撃できるモンスターがいません');
+        return;
+    }
+
+    // 相手にモンスターがいれば対象は0、いなければ-1（直接攻撃）
+    const defSlot = defender.fieldMonster[0] ? 0 : -1;
+    declareAttack(0, defSlot);
 }
 
 // ===============================
@@ -2201,4 +2270,31 @@ function showGraveyard(prefix) {
 function closeGraveyardModal() {
     const modal = document.getElementById('graveyard-modal');
     if (modal) modal.style.display = 'none';
+}
+
+function toggleHand() {
+    const el = document.getElementById('hand-area');
+    if (!el) return;
+    el.classList.toggle('hand-closed');
+    const wasOpen = !el.classList.contains('hand-closed');
+
+    const cardsEl = el.querySelector('.hand-cards');
+    if (cardsEl) cardsEl.style.display = wasOpen ? 'flex' : 'none';
+
+    const toggleBtn = el.querySelector('.btn-hand-toggle');
+    if (toggleBtn) toggleBtn.textContent = wasOpen ? '▲ 閉じる' : '▼ 開く';
+}
+
+function toggleLogModal() {
+    const modal = document.getElementById('log-modal');
+    if (!modal) return;
+    // Toggle display
+    if (modal.style.display === 'none' || modal.style.display === '') {
+        modal.style.display = 'flex';
+        // Scroll to bottom when opened
+        const logContainer = document.getElementById('log-modal-container');
+        if (logContainer) logContainer.scrollTop = logContainer.scrollHeight;
+    } else {
+        modal.style.display = 'none';
+    }
 }
