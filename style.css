@@ -1960,8 +1960,9 @@ body::before {
 }
 
 .card-large {
-  width: 220px;
-  height: 320px;
+  width: 460px;
+  max-width: 95vw;
+  height: 280px;
   border-radius: 12px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
   background: #222;
@@ -1972,11 +1973,6 @@ body::before {
   overflow: hidden;
   position: relative;
   border: 3px solid #ccc;
-}
-
-.card-large .card-header {
-  font-size: 1.2rem;
-  padding: 5px;
 }
 
 .card-large .card-name {
@@ -2479,15 +2475,20 @@ body::before {
 
 .bottom-section .btn-hand-toggle {
   display: inline-block !important;
-  /* 表示を復活 */
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  position: fixed;
+  bottom: 15px;
+  left: 15px;
+  z-index: 2000;
+  background: rgba(0, 0, 0, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.4);
   color: #fff;
-  font-size: 0.65rem;
-  padding: 2px 8px;
-  border-radius: 4px;
+  font-size: 0.8rem;
+  padding: 8px 16px;
+  border-radius: 8px;
   cursor: pointer;
   outline: none;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+  transition: background 0.2s, transform 0.2s;
 }
 
 .bottom-section .btn-hand-toggle:hover {

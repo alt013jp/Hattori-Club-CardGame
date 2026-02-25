@@ -2056,6 +2056,7 @@ function toggleLogModal() {
 function showCardDetail(card, actionCallback = null, actionText = '使用する') {
     const modal = document.getElementById('card-detail-modal');
     const view = document.getElementById('card-detail-view');
+    const btnContainer = document.getElementById('card-detail-buttons');
     if (!modal || !view || !card) return;
 
     // 大きなカード表示用構築
@@ -2066,39 +2067,59 @@ function showCardDetail(card, actionCallback = null, actionText = '使用する'
     else cardColor = '#4682B4';
 
     const imgArea = card.imageFile
-        ? `<div class="card-img-area"><img src="site/images/members/${card.imageFile}" style="width:100%;height:100%;object-fit:cover;" alt="${card.name}"></div>`
-        : `<div class="card-img-area" style="display:flex;justify-content:center;align-items:center;background:#fff;"><span class="card-emoji-large">${card.emoji || '\u{1F0CF}'}</span></div>`;
+        ? `<div class="card-img-area" style="flex:1; border-radius:8px; overflow:hidden; margin-bottom:10px; min-height:0;"><img src="site/images/members/${card.imageFile}" style="width:100%;height:100%;object-fit:cover;" alt="${card.name}"></div>`
+        : `<div class="card-img-area" style="flex:1; border-radius:8px; display:flex;justify-content:center;align-items:center;background:#fff; margin-bottom:10px; min-height:0;"><span class="card-emoji-large" style="font-size:4rem;">${card.emoji || '\u{1F0CF}'}</span></div>`;
 
+    // 2カラム化
     let html = `
-      <div style="background:${cardColor}; padding:10px; height:100%; box-sizing:border-box; display:flex; flex-direction:column; border-radius:10px;">
-        <div class="card-header" style="color:#000; background:rgba(255,255,255,0.8); padding:5px; border-radius:4px; margin-bottom:5px;">
-          ${isMonster ? 'M' : '魔'} | ${card.emoji || '🃏'} ${card.evolved ? '| 進化' : ''}
+      <div style="background:${cardColor}; padding:15px; width:100%; height:100%; box-sizing:border-box; display:flex; flex-direction:row; gap:15px; border-radius:10px;">
+        <!-- 左カラム：画像・名前・ATK -->
+        <div style="flex: 1; display:flex; flex-direction:column; max-width: 50%;">
+          ${imgArea}
+          <div class="card-name" style="font-size:1.1rem; text-align:center; font-weight:bold; margin-bottom:${isMonster ? '5px' : '0'}; line-height:1.2; text-shadow:0 1px 2px #000;">${card.name}</div>
+          ${isMonster ? `<div class="card-atk" style="text-align:center; font-weight:bold; font-size:1rem; color:#ffd700; text-shadow:0 1px 2px #000;">ATK: ${card.atk}</div>` : ''}
         </div>
-        ${imgArea}
-        <div class="card-name" style="font-size:1.2rem; text-align:center; margin:10px 0;">${card.name}</div>
-        ${isMonster ? `<div class="card-atk" style="text-align:right; font-weight:bold; font-size:1.2rem;">ATK: ${card.atk}</div>` : ''}
-        <div class="card-effect" style="flex:1; background:rgba(0,0,0,0.5); padding:10px; border-radius:6px; font-size:0.85rem; overflow-y:auto;">
-          ${card.effect || '効果なし'}
+        <!-- 右カラム：効果 -->
+        <div style="flex: 1; display:flex; flex-direction:column;">
+          <div class="card-effect" style="flex:1; background:rgba(0,0,0,0.6); padding:10px; border-radius:8px; font-size:0.85rem; overflow-y:auto; line-height:1.4; text-align:left; color:#fff; border:1px solid rgba(255,255,255,0.2);">
+            ${card.effect || '効果なし'}
+          </div>
         </div>
       </div>
     `;
 
     view.innerHTML = html;
 
-    // アクションボタンの追加（コールバックがある場合のみ）
-    if (actionCallback) {
-        const btn = document.createElement('button');
-        btn.className = 'btn btn-large';
-        btn.style.width = '100%';
-        btn.style.marginTop = '10px';
-        btn.style.background = 'linear-gradient(135deg, #1976d2, #0d47a1)';
-        btn.textContent = actionText;
-        btn.onclick = (e) => {
+    // ボタンの動的生成
+    if (btnContainer) {
+        btnContainer.innerHTML = '';
+
+        if (actionCallback) {
+            const actionBtn = document.createElement('button');
+            actionBtn.className = 'btn btn-large';
+            actionBtn.style.width = 'fit-content';
+            actionBtn.style.padding = '10px 40px';
+            actionBtn.style.background = 'linear-gradient(135deg, #1976d2, #0d47a1)';
+            actionBtn.textContent = isMonster ? '召喚' : '使用';
+            actionBtn.onclick = (e) => {
+                e.stopPropagation();
+                closeCardDetail();
+                actionCallback();
+            };
+            btnContainer.appendChild(actionBtn);
+        }
+
+        const closeBtn = document.createElement('button');
+        closeBtn.className = 'btn btn-close';
+        closeBtn.style.width = 'fit-content';
+        closeBtn.style.padding = '10px 40px';
+        closeBtn.style.margin = '0'; // 既存の固定マージン上書き
+        closeBtn.innerHTML = '✖ 閉じる';
+        closeBtn.onclick = (e) => {
             e.stopPropagation();
             closeCardDetail();
-            actionCallback();
-        }
-        view.appendChild(btn);
+        };
+        btnContainer.appendChild(closeBtn);
     }
 
     modal.style.display = 'flex';
