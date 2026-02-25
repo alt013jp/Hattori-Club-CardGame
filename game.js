@@ -943,7 +943,7 @@ function renderHand(player) {
 
     const label = document.createElement('div');
     label.className = 'hand-label';
-    label.textContent = `🃏 ${player.name} の手札 (${player.hand.length}枚)`;
+    label.textContent = `🃏 ${player.name} の手札`;
 
     const toggleBtn = document.createElement('button');
     toggleBtn.className = 'btn-hand-toggle';
@@ -2061,65 +2061,72 @@ function showCardDetail(card, actionCallback = null, actionText = '使用する'
 
     // 大きなカード表示用構築
     const isMonster = card.type === CARD_TYPE.MONSTER;
-    let cardColor = '#222';
-    if (card.evolved) cardColor = '#800080';
-    else if (!isMonster) cardColor = '#006400';
-    else cardColor = '#4682B4';
 
     const imgArea = card.imageFile
-        ? `<div class="card-img-area" style="flex:1; border-radius:8px; overflow:hidden; margin-bottom:10px; min-height:0;"><img src="site/images/members/${card.imageFile}" style="width:100%;height:100%;object-fit:cover;" alt="${card.name}"></div>`
-        : `<div class="card-img-area" style="flex:1; border-radius:8px; display:flex;justify-content:center;align-items:center;background:#fff; margin-bottom:10px; min-height:0;"><span class="card-emoji-large" style="font-size:4rem;">${card.emoji || '\u{1F0CF}'}</span></div>`;
+        ? `<img src="site/images/members/${card.imageFile}" class="card-photo-detail" alt="${card.name}">`
+        : `<span class="card-emoji-large" style="font-size:5rem;">${card.emoji || '\u{1F0CF}'}</span>`;
 
-    // 2カラム化
+    // 独立ウィンドウレイアウト
     let html = `
-      <div style="background:${cardColor}; padding:15px; width:100%; height:100%; box-sizing:border-box; display:flex; flex-direction:row; gap:15px; border-radius:10px;">
-        <!-- 左カラム：画像・名前・ATK -->
-        <div style="flex: 1; display:flex; flex-direction:column; max-width: 50%;">
+      <div class="detail-split-layout">
+        <!-- 左: 画像ウィンドウ -->
+        <div class="detail-window image-window">
           ${imgArea}
-          <div class="card-name" style="font-size:1.1rem; text-align:center; font-weight:bold; margin-bottom:${isMonster ? '5px' : '0'}; line-height:1.2; text-shadow:0 1px 2px #000;">${card.name}</div>
-          ${isMonster ? `<div class="card-atk" style="text-align:center; font-weight:bold; font-size:1rem; color:#ffd700; text-shadow:0 1px 2px #000;">ATK: ${card.atk}</div>` : ''}
         </div>
-        <!-- 右カラム：効果 -->
-        <div style="flex: 1; display:flex; flex-direction:column;">
-          <div class="card-effect" style="flex:1; background:rgba(0,0,0,0.6); padding:10px; border-radius:8px; font-size:0.85rem; overflow-y:auto; line-height:1.4; text-align:left; color:#fff; border:1px solid rgba(255,255,255,0.2);">
-            ${card.effect || '効果なし'}
+
+        <!-- 右: 情報ウィンドウ群 -->
+        <div class="detail-info-group">
+          <!-- 名前ウィンドウ -->
+          <div class="detail-window name-window">
+            <div class="detail-type-text" style="color:${isMonster ? '#4682B4' : '#006400'}">
+              ${isMonster ? '【 モンスター 】' : '【 魔法 】'}
+            </div>
+            <div class="detail-name-text">${card.name}</div>
+            ${isMonster ? `<div class="detail-atk-text">ATK: ${card.atk}</div>` : ''}
           </div>
+
+          <!-- 効果ウィンドウ -->
+          <div class="detail-window effect-window">
+            <div class="detail-effect-text">${card.effect || '効果なし'}</div>
+          </div>
+
+          <!-- アクション用の空コンテナ (JSで後乗せ) -->
+          <div class="detail-window action-window" id="inner-action-container"></div>
         </div>
       </div>
     `;
 
     view.innerHTML = html;
 
-    // ボタンの動的生成
+    // 以前の固定ボタンコンテナはクリアする
     if (btnContainer) {
         btnContainer.innerHTML = '';
+        btnContainer.style.display = 'none'; // 非表示にする
+    }
 
+    // 新たに 右側のアクションウィンドウ内にボタンを展開
+    const innerBtnContainer = document.getElementById('inner-action-container');
+    if (innerBtnContainer) {
         if (actionCallback) {
             const actionBtn = document.createElement('button');
-            actionBtn.className = 'btn btn-large';
-            actionBtn.style.width = 'fit-content';
-            actionBtn.style.padding = '10px 40px';
-            actionBtn.style.background = 'linear-gradient(135deg, #1976d2, #0d47a1)';
+            actionBtn.className = 'btn btn-large btn-action-main';
             actionBtn.textContent = isMonster ? '召喚' : '使用';
             actionBtn.onclick = (e) => {
                 e.stopPropagation();
                 closeCardDetail();
                 actionCallback();
             };
-            btnContainer.appendChild(actionBtn);
+            innerBtnContainer.appendChild(actionBtn);
         }
 
         const closeBtn = document.createElement('button');
-        closeBtn.className = 'btn btn-close';
-        closeBtn.style.width = 'fit-content';
-        closeBtn.style.padding = '10px 40px';
-        closeBtn.style.margin = '0'; // 既存の固定マージン上書き
+        closeBtn.className = 'btn btn-close btn-action-close';
         closeBtn.innerHTML = '✖ 閉じる';
         closeBtn.onclick = (e) => {
             e.stopPropagation();
             closeCardDetail();
         };
-        btnContainer.appendChild(closeBtn);
+        innerBtnContainer.appendChild(closeBtn);
     }
 
     modal.style.display = 'flex';
@@ -2139,4 +2146,61 @@ function toggleHand() {
         el.classList.add('hand-closed');
     }
     renderAll();
+}
+
+function renderGraveyard() {
+    if (!gs) return;
+
+    // Update counts
+    const p1Count = document.getElementById('p1-grave-count');
+    if (p1Count) p1Count.textContent = gs.player1.graveyard.length;
+
+    const p2Count = document.getElementById('p2-grave-count');
+    if (p2Count) p2Count.textContent = gs.player2.graveyard.length;
+}
+
+function showGraveyard(prefix) {
+    if (!gs) return;
+    const player = (prefix === 'p1') ? gs.player1 : gs.player2;
+    const modal = document.getElementById('graveyard-modal');
+    const list = document.getElementById('graveyard-list');
+    const title = document.getElementById('graveyard-title');
+
+    if (!modal || !list) return;
+
+    title.textContent = `🪦 ${player.name} の墓地 (${player.graveyard.length}枚)`;
+    list.innerHTML = '';
+
+    if (player.graveyard.length === 0) {
+        list.innerHTML = '<div style="color:#aaa; text-align:center; padding:20px;">墓地にカードはありません</div>';
+    } else {
+        player.graveyard.forEach((card, idx) => {
+            const item = document.createElement('div');
+            item.className = 'graveyard-item';
+            // カード名と簡易情報を表示
+            const isMonster = card.type === CARD_TYPE.MONSTER;
+            item.innerHTML = `
+                <div class="graveyard-card-name">
+                    <span style="color:${isMonster ? '#4682B4' : '#006400'}; font-weight:bold;">
+                        ${isMonster ? '[M]' : '[魔]'}
+                    </span> 
+                    ${card.name}
+                </div>
+                <div style="font-size:0.8rem; color:#ccc;">${card.effect ? card.effect.substring(0, 30) + '...' : ''}</div>
+            `;
+            // クリックで詳細表示（オプション）
+            item.onclick = (e) => {
+                e.stopPropagation();
+                showCardDetail(card);
+            };
+            list.appendChild(item);
+        });
+    }
+
+    modal.style.display = 'flex';
+}
+
+function closeGraveyardModal() {
+    const modal = document.getElementById('graveyard-modal');
+    if (modal) modal.style.display = 'none';
 }
