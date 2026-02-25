@@ -940,16 +940,9 @@ function renderHand(player) {
     cardsEl.className = 'hand-cards';
     if (!wasOpen) cardsEl.style.display = 'none';
 
-    // 手札の扇状配置用計算 (全デバイス共通で適用)
-    const total = player.hand.length;
-    const angleStep = 8;
-    const startAngle = -((total - 1) * angleStep) / 2;
-
+    // 手札をフラットに並べて描画（重なりはCSSで処理）
     player.hand.forEach((card, idx) => {
         const el = createCardElement(card, idx, true);
-        const angle = startAngle + idx * angleStep;
-        // 扇状になるように回転と微細なY軸調整
-        el.style.transform = `rotate(${angle}deg) translateY(-${Math.max(0, 10 - Math.abs(angle))}px)`;
         cardsEl.appendChild(el);
     });
     el.appendChild(cardsEl);

@@ -123,25 +123,23 @@
         </div>
 
         <!-- コントロールバー -->
-        <div class="controls-bar">
-            <button class="btn btn-attack" id="btn-attack" onclick="declareAttack()">⚔️ 攻撃宣言</button>
-            <button class="btn btn-end-turn" id="btn-end-turn" onclick="endTurn()">✅ ターン終了</button>
-            <button class="btn btn-back" onclick="goToTitle()">🏠 タイトルへ</button>
+        <div class="controls-bar" style="pointer-events:none;">
+            <button class="btn btn-attack" id="btn-attack" onclick="declareAttack()" style="pointer-events:auto;">⚔️
+                攻撃宣言</button>
+            <button class="btn btn-end-turn" id="btn-end-turn" onclick="endTurn()" style="pointer-events:auto;">✅
+                ターン終了</button>
 
-            <div class="dice-section">
+            <div class="dice-section" style="pointer-events:auto;">
                 <span class="dice-label">ダイス</span>
                 <span id="dice-display">🎲</span>
             </div>
         </div>
 
-        <!-- ログ -->
-        <div class="log-section">
-            <div class="log-header">📋 発動ログ</div>
-            <div id="log-container"></div>
+        <!-- 🍔 メニューボタン群 (スマホ・PC共通で右下配置など) -->
+        <div class="menu-buttons-container">
+            <button id="log-btn" class="menu-btn" onclick="toggleLogModal()" title="ゲームログ">📋</button>
+            <button id="hamburger-btn" class="menu-btn" onclick="toggleHamburgerMenu()" title="メニュー">☰</button>
         </div>
-
-        <!-- 🍔 ハンバーガーボタン (スマホ向け) -->
-        <button id="hamburger-btn" class="hamburger-btn" onclick="toggleHamburgerMenu()">☰</button>
 
     </div><!-- /game-screen -->
 
