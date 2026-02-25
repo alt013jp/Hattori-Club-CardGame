@@ -504,6 +504,8 @@ async function useMonsterCard(card, player, slotIdx) {
     card.tempAtkBonus = 0;
     card.tempAtkPenalty = 0;
 
+    gs.log(`【召喚】${player.name} が「${card.name}」を召喚しました！`);
+
     // 上出 瑠星の相手フィールド効果
     const opponent = gs.getOpponent(player);
     if ((card.id === CARD_ID.HORIE || card.id === CARD_ID.JOSOU_HORIE) &&
@@ -525,6 +527,7 @@ async function useMonsterCard(card, player, slotIdx) {
 
 async function useMagicCard(card, player, slotIdx) {
     player.fieldMagic[slotIdx] = card;
+    gs.log(`【発動】${player.name} が「${card.name}」を使用しました！`);
     // 非同期onPlay対応
     const result = card.onPlay ? await card.onPlay(gs, player) : null;
 
@@ -910,7 +913,7 @@ function renderDice(result) {
 }
 
 function renderLog(msg) {
-    const el = document.getElementById('log-container');
+    const el = document.getElementById('log-modal-container') || document.getElementById('log-container');
     if (!el) return;
     const line = document.createElement('div');
     line.className = 'log-line';
@@ -941,16 +944,11 @@ function renderHand(player) {
     const headerEl = document.createElement('div');
     headerEl.className = 'hand-header';
 
-    const label = document.createElement('div');
-    label.className = 'hand-label';
-    label.textContent = `🃏 ${player.name} の手札`;
-
     const toggleBtn = document.createElement('button');
     toggleBtn.className = 'btn-hand-toggle';
     toggleBtn.textContent = wasOpen ? '▲ 閉じる' : '▼ 開く';
     toggleBtn.onclick = toggleHand;
 
-    headerEl.appendChild(label);
     headerEl.appendChild(toggleBtn);
 
     // ヘッダーを後から追加し、CSS的にも被らないように・背面へ行かないようにする
