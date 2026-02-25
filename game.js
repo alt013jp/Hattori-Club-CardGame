@@ -876,8 +876,21 @@ function renderHand(player) {
     const cardsEl = document.createElement('div');
     cardsEl.className = 'hand-cards';
     if (!wasOpen) cardsEl.style.display = 'none';
+
+    // 手札の扇状配置用計算
+    const isMobile = window.innerWidth <= 768;
+    const total = player.hand.length;
+    const angleStep = 8;
+    const startAngle = -((total - 1) * angleStep) / 2;
+
     player.hand.forEach((card, idx) => {
-        cardsEl.appendChild(createCardElement(card, idx, true));
+        const el = createCardElement(card, idx, true);
+        if (isMobile) {
+            const angle = startAngle + idx * angleStep;
+            // 扇状になるように回転と微細なY軸調整
+            el.style.transform = `rotate(${angle}deg) translateY(-${Math.max(0, 10 - Math.abs(angle))}px)`;
+        }
+        cardsEl.appendChild(el);
     });
     el.appendChild(cardsEl);
 
@@ -930,8 +943,27 @@ function createCardElement(card, idx, inHand = false) {
   `;
 
     if (inHand && canPlay) {
-        el.addEventListener('click', () => useCard(idx));
-        el.title = 'クリックして使用';
+        if (window.innerWidth <= 768) {
+            // スマホ：詳細モーダルから使用する
+            el.addEventListener('click', (e) => {
+                e.stopPropagation();
+                showCardDetail(card, () => useCard(idx), '✨ 使用 / 召喚する');
+            });
+        } else {
+            // PC：直で使用
+            el.addEventListener('click', () => useCard(idx));
+            el.title = 'クリックして使用';
+        }
+    } else {
+        // 使用不可な手札、もしくはフィールドのカード（詳細表示）
+        if (window.innerWidth <= 768) {
+            el.addEventListener('click', (e) => {
+                e.stopPropagation();
+                // フィールド上のカードの場合は攻撃などができなくなるのを防ぐため、
+                // アクションがない単なる詳細表示として開く（PC版の操作体系と分ける）
+                showCardDetail(card);
+            });
+        }
     }
 
     // ULTRAMAN IN KANAZAWA: 捨てて発動ボタン
@@ -941,10 +973,19 @@ function createCardElement(card, idx, inHand = false) {
         discardBtn.textContent = '★ 捨てて発動';
         discardBtn.onclick = (e) => {
             e.stopPropagation();
-            const i = gs.currentPlayer.hand.indexOf(card);
-            if (i !== -1) { gs.currentPlayer.hand.splice(i, 1); gs.currentPlayer.graveyard.push(card); }
-            card.onDiscard(gs, gs.currentPlayer);
-            renderAll();
+            if (window.innerWidth <= 768) {
+                showCardDetail(card, () => {
+                    const i = gs.currentPlayer.hand.indexOf(card);
+                    if (i !== -1) { gs.currentPlayer.hand.splice(i, 1); gs.currentPlayer.graveyard.push(card); }
+                    card.onDiscard(gs, gs.currentPlayer);
+                    renderAll();
+                }, '★ 捨てて発動する');
+            } else {
+                const i = gs.currentPlayer.hand.indexOf(card);
+                if (i !== -1) { gs.currentPlayer.hand.splice(i, 1); gs.currentPlayer.graveyard.push(card); }
+                card.onDiscard(gs, gs.currentPlayer);
+                renderAll();
+            }
         };
         el.appendChild(discardBtn);
     }
@@ -1680,10 +1721,19 @@ function _renderAsGuest(state) {
         if (!wasOpen) cardsContainer.style.display = 'none';
 
         state.p2.hand.forEach((card, idx) => {
-            const el = _makeGuestCardEl(card, state.isGuestTurn
-                ? () => _sendOnlineAction({ type: 'play_hand_card', handIndex: idx })
-                : null
-            );
+            const isMyTurn = state.isGuestTurn;
+            const actionFn = isMyTurn ? () => _sendOnlineAction({ type: 'play_hand_card', handIndex: idx }) : null;
+            const el = _makeGuestCardEl(card, actionFn);
+
+            // ゲスト側 スマホ扇状手札
+            if (window.innerWidth <= 768) {
+                const total = state.p2.hand.length;
+                const angleStep = 8;
+                const startAngle = -((total - 1) * angleStep) / 2;
+                const angle = startAngle + idx * angleStep;
+                el.style.transform = `rotate(${angle}deg) translateY(-${Math.max(0, 10 - Math.abs(angle))}px)`;
+            }
+
             // 相手ターン中での明度低下（opacity=0.6）を削除
             cardsContainer.appendChild(el);
         });
@@ -1763,48 +1813,35 @@ function _renderGuestZone(zoneId, card) {
 // ===== ゲストのカードDOM生成 =====
 function _makeGuestCardEl(card, onClick) {
     const el = document.createElement('div');
-    if (!card || card.id === 'hidden') {
-        el.className = 'card card-magic';
-        el.innerHTML = `<div style="font-size:2rem;text-align:center;margin-top:20px;">🃏</div><div style="font-size:0.75rem;text-align:center;margin-top:10px;">裏向きカード</div>`;
-        return el;
-    }
-
-    let cls = `card ${card.type === 'monster' ? 'card-monster' : 'card-magic'}`;
+    if (!card) return el;
+    let cls = `card ${card.type === CARD_TYPE.MONSTER ? 'card-monster' : 'card-magic'}`;
     if (card.evolved) cls += ' card-evolved';
     el.className = cls;
 
-    // 色統一ロジック
     let cardColor = '#222';
     if (card.evolved) cardColor = '#800080';
-    else if (card.type === 'magic') cardColor = '#006400';
-    else if (card.type === 'monster') cardColor = '#4682B4';
+    else if (card.type === CARD_TYPE.MAGIC) cardColor = '#006400';
+    else if (card.type === CARD_TYPE.MONSTER) cardColor = '#4682B4';
     el.style.setProperty('--card-color', cardColor);
 
-    const atkDisplay = card.type === 'monster'
-        ? `<div class="card-atk">ATK: ${(card.atk || 0) + (card.tempAtkBonus || 0) - (card.tempAtkPenalty || 0)}</div>` : '';
-
-    const safeEmoji = (card.emoji || '\u{1F0CF}').replace(/\?/g, '');
+    const atkDisplay = card.type === CARD_TYPE.MONSTER ? `<div class="card-atk">ATK: ${card.atk}</div>` : '';
     const imgArea = card.imageFile
         ? `<div class="card-img-area"><img src="site/images/members/${card.imageFile}" class="card-photo" alt="${card.name}"></div>`
-        : `<div class="card-img-area"><span class="card-emoji-large">${safeEmoji}</span></div>`;
+        : `<div class="card-img-area"><span class="card-emoji-large">${card.emoji || '\u{1F0CF}'}</span></div>`;
 
     el.innerHTML = `
-    <div class="card-header">
-      <span class="card-type-badge">${card.type === 'monster' ? 'M' : '\u9b54'}</span>
-      <span class="card-emoji">${safeEmoji}</span>
-      ${card.evolved ? '<span class="evolved-badge">\u9032\u5316</span>' : ''}
-    </div>
-    ${imgArea}
-    <div class="card-name">${card.name}</div>
-    ${atkDisplay}
-    <div class="card-effect">${(card.effect || '').replace(/\?/g, '〜').substring(0, 30)}</div>
-    ${card.effectNegated ? '<div style="color:#ff4444;font-size:0.55rem;text-align:center;">【効果無効】</div>' : ''}
-    ${card.lifespan != null ? `<div style="color:#ffdd57;font-size:0.55rem;text-align:center;">残${card.lifespan}T</div>` : ''}
+      <div class="card-header">
+        <span class="card-type-badge">${card.type === CARD_TYPE.MONSTER ? 'M' : '\u9b54'}</span>
+        <span class="card-emoji">${card.emoji || '\u{1F0CF}'}</span>
+        ${card.evolved ? '<span class="evolved-badge">\u9032\u5316</span>' : ''}
+      </div>
+      ${imgArea}
+      <div class="card-name">${card.name}</div>
+      ${atkDisplay}
+      <div class="card-effect">${card.effect || ''}</div>
     `;
 
     if (onClick) {
-        el.classList.add('card-playable');
-        el.style.cursor = 'pointer';
         el.title = 'クリックしてプレイ';
         el.onclick = onClick;
     }
@@ -1827,4 +1864,86 @@ function _updLpColor(el, lp) {
     if (lp > 2000) el.style.color = '#00ff88';
     else if (lp > 1000) el.style.color = '#ffaa00';
     else el.style.color = '#ff4444';
+}
+
+// ===============================
+// UIモーダル制御関係 (ハンバーガー等)
+// ===============================
+function toggleHamburgerMenu() {
+    const overlay = document.getElementById('hamburger-overlay');
+    if (!overlay) return;
+    overlay.style.display = overlay.style.display === 'none' ? 'flex' : 'none';
+}
+
+function toggleLogModal() {
+    const overlay = document.getElementById('log-modal');
+    if (!overlay) return;
+    // ハンバーガーメニューを閉じる
+    document.getElementById('hamburger-overlay').style.display = 'none';
+
+    // ログの内容を転写
+    const originalLog = document.getElementById('log-container');
+    const modalLog = document.getElementById('log-modal-container');
+    if (originalLog && modalLog) {
+        modalLog.innerHTML = originalLog.innerHTML;
+        modalLog.scrollTop = modalLog.scrollHeight;
+    }
+
+    overlay.style.display = overlay.style.display === 'none' ? 'flex' : 'none';
+}
+
+function showCardDetail(card, actionCallback = null, actionText = '使用する') {
+    const modal = document.getElementById('card-detail-modal');
+    const view = document.getElementById('card-detail-view');
+    if (!modal || !view || !card) return;
+
+    // 大きなカード表示用構築
+    const isMonster = card.type === CARD_TYPE.MONSTER;
+    let cardColor = '#222';
+    if (card.evolved) cardColor = '#800080';
+    else if (!isMonster) cardColor = '#006400';
+    else cardColor = '#4682B4';
+
+    const imgArea = card.imageFile
+        ? `<div class="card-img-area"><img src="site/images/members/${card.imageFile}" style="width:100%;height:100%;object-fit:cover;" alt="${card.name}"></div>`
+        : `<div class="card-img-area" style="display:flex;justify-content:center;align-items:center;background:#fff;"><span class="card-emoji-large">${card.emoji || '\u{1F0CF}'}</span></div>`;
+
+    let html = `
+      <div style="background:${cardColor}; padding:10px; height:100%; box-sizing:border-box; display:flex; flex-direction:column; border-radius:10px;">
+        <div class="card-header" style="color:#000; background:rgba(255,255,255,0.8); padding:5px; border-radius:4px; margin-bottom:5px;">
+          ${isMonster ? 'M' : '魔'} | ${card.emoji || '🃏'} ${card.evolved ? '| 進化' : ''}
+        </div>
+        ${imgArea}
+        <div class="card-name" style="font-size:1.2rem; text-align:center; margin:10px 0;">${card.name}</div>
+        ${isMonster ? `<div class="card-atk" style="text-align:right; font-weight:bold; font-size:1.2rem;">ATK: ${card.atk}</div>` : ''}
+        <div class="card-effect" style="flex:1; background:rgba(0,0,0,0.5); padding:10px; border-radius:6px; font-size:0.85rem; overflow-y:auto;">
+          ${card.effect || '効果なし'}
+        </div>
+      </div>
+    `;
+
+    view.innerHTML = html;
+
+    // アクションボタンの追加（コールバックがある場合のみ）
+    if (actionCallback) {
+        const btn = document.createElement('button');
+        btn.className = 'btn btn-large';
+        btn.style.width = '100%';
+        btn.style.marginTop = '10px';
+        btn.style.background = 'linear-gradient(135deg, #1976d2, #0d47a1)';
+        btn.textContent = actionText;
+        btn.onclick = (e) => {
+            e.stopPropagation();
+            closeCardDetail();
+            actionCallback();
+        }
+        view.appendChild(btn);
+    }
+
+    modal.style.display = 'flex';
+}
+
+function closeCardDetail() {
+    const modal = document.getElementById('card-detail-modal');
+    if (modal) modal.style.display = 'none';
 }
