@@ -72,7 +72,6 @@
             <div class="g-topbar-center">
                 <div id="turn-badge">ターン 1 | P1 のターン</div>
                 <div id="phase-display">ドローフェイズ</div>
-                <div id="mode-badge" class="mode-badge normal-mode">⚔️ 対戦</div>
             </div>
 
             <div class="player-panel" id="p2-panel">
@@ -113,7 +112,7 @@
             <div class="field-divider">
                 <div class="divider-line"></div>
                 <button class="divider-icon" onclick="triggerFieldAttack()" title="攻撃する"
-                    style="background:none; border:none; font-size:2rem; cursor:pointer; padding:0;">⚔️</button>
+                    style="background:none; border:none; font-size:2.5rem; cursor:pointer; padding:0; position:relative; z-index:100; pointer-events:auto; filter:drop-shadow(0 0 5px rgba(255,255,255,0.8));">⚔️</button>
                 <div class="divider-line"></div>
             </div>
 
@@ -138,16 +137,11 @@
         </div><!-- /battle-area -->
 
         <!-- 下部セクション：コントロール + 手札 -->
-        <div class="bottom-section">
-            <!-- コントロールバー (非表示) -->
-            <div class="controls-bar" style="display:none; pointer-events:none;">
-                <button class="btn btn-end-turn" id="btn-end-turn" onclick="endTurn()" style="pointer-events:auto;">✅
-                    ターン終了</button>
-
-                <div class="dice-section" style="pointer-events:auto;">
-                    <span class="dice-label">ダイス</span>
-                    <span id="dice-display">🎲</span>
-                </div>
+        <div class="bottom-section" style="pointer-events:none;">
+            <!-- ダイス（必要に応じて別の場所で表示、またはDOMのみ残す） -->
+            <div class="dice-section" style="display:none; pointer-events:none;">
+                <span class="dice-label">ダイス</span>
+                <span id="dice-display">🎲</span>
             </div>
 
             <!-- 手札エリア（画面最下部に固定） -->

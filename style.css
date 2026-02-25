@@ -183,8 +183,9 @@ body::before {
   display: none;
   flex-direction: column;
   height: 100vh;
-  padding: 0.8rem;
-  gap: 0.5rem;
+  padding: 0;
+  /* paddingを詰めて領域を広げる */
+  gap: 0;
   position: relative;
   z-index: 1;
 }
@@ -194,7 +195,8 @@ body::before {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.5rem 1rem;
+  padding: 0.3rem 0.5rem;
+  /* paddingを詰める */
   background: rgba(0, 0, 0, 0.5);
   border: 1px solid rgba(201, 162, 39, 0.3);
   border-radius: 4px;
@@ -680,8 +682,7 @@ body::before {
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.8), 0 0 15px rgba(201, 162, 39, 0.5);
 }
 
-.hand-label,
-.hand-header {
+.hand-label {
   display: none !important;
   /* 扇状UIのためヘッダー系は原則不要 */
 }
@@ -1953,6 +1954,9 @@ body::before {
   background: transparent;
   border: none;
   box-shadow: none;
+  padding: 0 !important;
+  width: 95vw !important;
+  max-width: 95vw !important;
   display: flex;
   flex-direction: column;
   align-items: center;
