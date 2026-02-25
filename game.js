@@ -26,21 +26,21 @@ class Player {
         this.isHuman = isHuman;
         this.lp = 4000;
         this.hand = [];
-        this.fieldMonster = null;
-        this.fieldMagic = null;
+        this.fieldMonster = [null, null, null, null, null];
+        this.fieldMagic = [null, null, null, null, null];
         this.graveyard = [];
         this.skipNextDraw = false;
         this.delayedEffects = []; // { type: 'damage', amount: 2000, countdown: 2, message: '...' }
     }
 
-    // 実効ATK計算（バフ/デバフ込み）
-    getEffectiveAtk(gameState) {
-        if (!this.fieldMonster) return 0;
-        const base = this.fieldMonster.atk;
-        const temp = this.fieldMonster.tempAtkBonus || 0;
-        const penalty = this.fieldMonster.tempAtkPenalty || 0;
-        // 道下 政功の永続スタックボーナス
-        const permanent_card = this.fieldMonster.permanentAtkBonus || 0;
+    // 実効ATK計算（バフ/デバフ込み）- 個別スロット指定版
+    getEffectiveAtk(gameState, slotIndex) {
+        if (!this.fieldMonster || !this.fieldMonster[slotIndex]) return 0;
+        const monster = this.fieldMonster[slotIndex];
+        const base = monster.atk;
+        const temp = monster.tempAtkBonus || 0;
+        const penalty = monster.tempAtkPenalty || 0;
+        const permanent_card = monster.permanentAtkBonus || 0;
 
         // 永続効果（氷見高校）
         let permanent = 0;
@@ -52,6 +52,15 @@ class Player {
 
         return Math.max(0, base + temp + permanent + permanent_card - penalty);
     }
+}
+
+// ヘルパー：空きスロットを探す
+function getFirstEmptySlot(fieldArray) {
+    if (!fieldArray) return -1;
+    for (let i = 0; i < fieldArray.length; i++) {
+        if (fieldArray[i] === null) return i;
+    }
+    return -1;
 }
 
 // ===============================
@@ -442,10 +451,24 @@ async function useCard(cardIndex) {
     player.hand.splice(cardIndex, 1);
 
     if (card.type === CARD_TYPE.MONSTER) {
-        await useMonsterCard(card, player);
+        // MONSTER：空き枠を探す。空きがなければプレイ不能だが、事前の canUse 等で弾かれている想定
+        const slotIdx = getFirstEmptySlot(player.fieldMonster);
+        if (slotIdx === -1) {
+            gs.log('⚠ フィールド(モンスター)に空きがありません！');
+            player.hand.splice(cardIndex, 0, card); // 手札に戻す
+            return;
+        }
+        await useMonsterCard(card, player, slotIdx);
         gs.monsterUsedThisTurn = true; // モンスターはこのターン使用済み
     } else if (card.type === CARD_TYPE.MAGIC) {
-        await useMagicCard(card, player);
+        // MAGIC：空き枠を探す
+        const slotIdx = getFirstEmptySlot(player.fieldMagic);
+        if (slotIdx === -1) {
+            gs.log('⚠ フィールド(魔法)に空きがありません！');
+            player.hand.splice(cardIndex, 0, card); // 手札に戻す
+            return;
+        }
+        await useMagicCard(card, player, slotIdx);
         // 魔法は何枚でも使用可能（フラグを立てない）
     }
 
@@ -456,45 +479,39 @@ async function useCard(cardIndex) {
     }
 }
 
-async function useMonsterCard(card, player) {
+async function useMonsterCard(card, player, slotIdx) {
     // 上位進化のコスト処理
     if (card.evolved && card.costCardId) {
-        // [修正] 手札優先、なければフィールドから墓地へ送る
         const handIdx = player.hand.findIndex(c => c.id === card.costCardId);
         if (handIdx !== -1) {
             // 手札を使用
             const cost = player.hand.splice(handIdx, 1)[0];
             player.graveyard.push(cost);
             gs.log(`手札の${cost.name}を捨てて進化！`);
-        } else if (player.fieldMonster && player.fieldMonster.id === card.costCardId) {
+        } else {
             // フィールドを使用
-            gs.log(`フィールドの${player.fieldMonster.name}を進化！`);
-            player.graveyard.push(player.fieldMonster);
-            player.fieldMonster = null;
+            const fieldIdx = player.fieldMonster.findIndex(c => c && c.id === card.costCardId);
+            if (fieldIdx !== -1) {
+                gs.log(`フィールドの${player.fieldMonster[fieldIdx].name}を進化！`);
+                player.graveyard.push(player.fieldMonster[fieldIdx]);
+                player.fieldMonster[fieldIdx] = null;
+            }
         }
     }
 
-    // 既存モンスターがいれば墓地へ
-    if (player.fieldMonster) {
-        const old = player.fieldMonster;
-        player.graveyard.push(old);
-        player.fieldMonster = null;
-        gs.log(`${old.name}が交代で墓地へ`);
-    }
-    player.fieldMonster = card;
+    player.fieldMonster[slotIdx] = card;
     card.tempAtkBonus = 0;
     card.tempAtkPenalty = 0;
 
     // 上出 瑠星の相手フィールド効果
     const opponent = gs.getOpponent(player);
     if ((card.id === CARD_ID.HORIE || card.id === CARD_ID.JOSOU_HORIE) &&
-        opponent.fieldMonster &&
-        (opponent.fieldMonster.id === CARD_ID.KAMIDE || opponent.fieldMonster.id === CARD_ID.AI_KAMIDE)) {
+        opponent.fieldMonster.some(m => m && (m.id === CARD_ID.KAMIDE || m.id === CARD_ID.AI_KAMIDE))) {
         gs.drawCard(opponent);
         gs.log(`【${opponent.name}】上出 瑠星の効果！堀江 俊郎召喚に反応で1枚ドローしました`);
     }
 
-    // onPlay（コスト処理・効果発動）
+    // onPlay（コスト処理・効果発動） ※現状のonPlayの仕様は引数2つだが後ほどスロット対応等が必要になる場合あり
     if (card.onPlay) await card.onPlay(gs, player);
 
     // エフェクト
@@ -505,8 +522,8 @@ async function useMonsterCard(card, player) {
     }
 }
 
-async function useMagicCard(card, player) {
-    player.fieldMagic = card;
+async function useMagicCard(card, player, slotIdx) {
+    player.fieldMagic[slotIdx] = card;
     // 非同期onPlay対応
     const result = card.onPlay ? await card.onPlay(gs, player) : null;
 
@@ -526,7 +543,7 @@ async function useMagicCard(card, player) {
 
     // 装備カード以外は即墓地へ
     if (!result || !result.dontGraveyard) {
-        player.fieldMagic = null;
+        player.fieldMagic[slotIdx] = null;
         player.graveyard.push(card);
     }
     triggerMagicCastEffect();
@@ -554,30 +571,36 @@ async function declareAttack() {
     const attacker = gs.currentPlayer;
     const defender = gs.getOpponent(attacker);
 
-    if (!attacker.fieldMonster) {
-        gs.log('⚠ フィールドにモンスターがいません');
+    // 暫定：一番左（index 0）に近いモンスターを探す
+    const atkSlot = attacker.fieldMonster.findIndex(m => m !== null);
+    if (atkSlot === -1) {
+        gs.log('⚠ フィールドに攻撃できるモンスターがいません');
         return;
     }
+    const defSlot = defender.fieldMonster.findIndex(m => m !== null);
+
+    const atkMonster = attacker.fieldMonster[atkSlot];
+    const defMonster = defSlot !== -1 ? defender.fieldMonster[defSlot] : null;
 
     gs.phase = PHASE.BATTLE;
     renderPhase(gs.phase);
 
-    const atkAtk = attacker.getEffectiveAtk(gs);
-    const defAtk = defender.getEffectiveAtk(gs);
+    const atkAtk = attacker.getEffectiveAtk(gs, atkSlot);
+    const defAtk = defMonster ? defender.getEffectiveAtk(gs, defSlot) : 0;
 
-    if (defender.fieldMonster) {
-        gs.log(`【攻撃】${attacker.fieldMonster.name}(ATK:${atkAtk}) vs ${defender.fieldMonster.name}(ATK:${defAtk})`);
+    if (defMonster) {
+        gs.log(`【攻撃】${atkMonster.name}(ATK:${atkAtk}) vs ${defMonster.name}(ATK:${defAtk})`);
     } else {
-        gs.log(`【直接攻撃】${attacker.fieldMonster.name}(ATK:${atkAtk}) → ${defender.name}`);
+        gs.log(`【直接攻撃】${atkMonster.name}(ATK:${atkAtk}) → ${defender.name}`);
     }
 
     // ===== 必勝判定 =====
     let forceWin = false;
 
     // イエローパークのG vs 柳 克憲
-    if (attacker.fieldMonster.id === CARD_ID.YELLOW_G &&
-        defender.fieldMonster &&
-        (defender.fieldMonster.id === CARD_ID.YANAGI || defender.fieldMonster.id === CARD_ID.VISION_YANAGI)) {
+    if (atkMonster.id === CARD_ID.YELLOW_G &&
+        defMonster &&
+        (defMonster.id === CARD_ID.YANAGI || defMonster.id === CARD_ID.VISION_YANAGI)) {
         forceWin = true;
         gs.log('✨ イエローパークのG：柳 克憲に必勝！');
     }
@@ -611,15 +634,16 @@ async function declareAttack() {
     }
 
     // 直接攻撃
-    const isDirectAttack = !defender.fieldMonster;
+    const isDirectAttack = !defMonster;
     if (isDirectAttack) {
         const dmg = Math.floor(atkAtk * damageMultiplier);
         defender.lp = Math.max(0, defender.lp - dmg);
+        showFloatingDamage(dmg, defender === gs.player1, true);
         gs.log(`${defender.name}に${dmg}ダメージ！(LP:${defender.lp})`);
 
         // CURTAIN BREAKER 追加ダメージ
-        if (attacker.fieldMonster.id === CARD_ID.CURTAIN_HASHIMOTO && attacker.fieldMonster.onBattleWin) {
-            attacker.fieldMonster.onBattleWin(gs, attacker, defender);
+        if (atkMonster.id === CARD_ID.CURTAIN_HASHIMOTO && atkMonster.onBattleWin) {
+            atkMonster.onBattleWin(gs, attacker, defender);
         }
     } else {
         // モンスター同士の戦闘
@@ -629,66 +653,68 @@ async function declareAttack() {
 
         if (isDraw) {
             gs.log('引き分け！両モンスター墓地へ');
-            destroyMonster(attacker);
-            destroyMonster(defender);
+            destroyMonster(attacker, atkSlot);
+            destroyMonster(defender, defSlot);
         } else if (attackerWins) {
             const diff = forceWin ? atkAtk : (atkAtk - defAtk);
             const dmg = Math.floor(diff * damageMultiplier);
 
-            gs.log(`${attacker.fieldMonster.name}が勝利！差分${dmg}ダメージ`);
+            gs.log(`${atkMonster.name}が勝利！差分${dmg}ダメージ`);
             defender.lp = Math.max(0, defender.lp - dmg);
+            showFloatingDamage(dmg, defender === gs.player1, true);
             gs.log(`${defender.name} LP:${defender.lp}`);
 
-            if (defender.fieldMonster.indestructible && !defender.fieldMonster.effectNegated) {
-                gs.log(`${defender.fieldMonster.name}は戦闘では破壊されない！`);
+            if (defMonster.indestructible && !defMonster.effectNegated) {
+                gs.log(`${defMonster.name}は戦闘では破壊されない！`);
                 // 道下 政功：破壊成功時にATK+600（永続スタック）
-                if (attacker.fieldMonster.id === CARD_ID.MICHISHITA) {
-                    attacker.fieldMonster.permanentAtkBonus = (attacker.fieldMonster.permanentAtkBonus || 0) + 600;
-                    gs.log(`道下 政功 ATK+600スタック！現在ATK:${attacker.getEffectiveAtk(gs)}`);
+                if (atkMonster.id === CARD_ID.MICHISHITA) {
+                    atkMonster.permanentAtkBonus = (atkMonster.permanentAtkBonus || 0) + 600;
+                    gs.log(`道下 政功 ATK+600スタック！現在ATK:${attacker.getEffectiveAtk(gs, atkSlot)}`);
                 }
             } else {
                 // 道下 政功：相手破壊成功でATK+600
-                if (attacker.fieldMonster.id === CARD_ID.MICHISHITA) {
-                    attacker.fieldMonster.permanentAtkBonus = (attacker.fieldMonster.permanentAtkBonus || 0) + 600;
-                    gs.log(`道下 政功 ATK+600スタック！現在ATK:${attacker.getEffectiveAtk(gs)}`);
+                if (atkMonster.id === CARD_ID.MICHISHITA) {
+                    atkMonster.permanentAtkBonus = (atkMonster.permanentAtkBonus || 0) + 600;
+                    gs.log(`道下 政功 ATK+600スタック！現在ATK:${attacker.getEffectiveAtk(gs, atkSlot)}`);
                 }
                 // CURTAIN BREAKER
-                if (attacker.fieldMonster.id === CARD_ID.CURTAIN_HASHIMOTO && attacker.fieldMonster.onBattleWin) {
-                    attacker.fieldMonster.onBattleWin(gs, attacker, defender);
+                if (atkMonster.id === CARD_ID.CURTAIN_HASHIMOTO && atkMonster.onBattleWin) {
+                    atkMonster.onBattleWin(gs, attacker, defender);
                 }
-                destroyMonster(defender, false);
+                destroyMonster(defender, defSlot, false);
             }
         } else {
             // 防御側勝利
             const diff = defAtk - atkAtk;
-            gs.log(`${defender.fieldMonster.name}が防御勝利！差分${diff}ダメージ`);
+            gs.log(`${defMonster.name}が防御勝利！差分${diff}ダメージ`);
             // 攻撃側への反動ダメージには防御側（受け手でない）の二割引は適用されない
             attacker.lp = Math.max(0, attacker.lp - diff);
+            showFloatingDamage(diff, attacker === gs.player1, true);
             gs.log(`${attacker.name} LP:${attacker.lp}`);
 
-            if (attacker.fieldMonster.indestructible && !attacker.fieldMonster.effectNegated) {
-                gs.log(`${attacker.fieldMonster.name}は戦闘では破壊されない！`);
+            if (atkMonster.indestructible && !atkMonster.effectNegated) {
+                gs.log(`${atkMonster.name}は戦闘では破壊されない！`);
                 // 道下（防御側）：相手破壊でATK+600
-                if (defender.fieldMonster.id === CARD_ID.MICHISHITA) {
-                    defender.fieldMonster.permanentAtkBonus = (defender.fieldMonster.permanentAtkBonus || 0) + 600;
-                    gs.log(`道下 政功 ATK+600スタック！現在ATK:${defender.getEffectiveAtk(gs)}`);
+                if (defMonster.id === CARD_ID.MICHISHITA) {
+                    defMonster.permanentAtkBonus = (defMonster.permanentAtkBonus || 0) + 600;
+                    gs.log(`道下 政功 ATK+600スタック！現在ATK:${defender.getEffectiveAtk(gs, defSlot)}`);
                 }
             } else {
                 // 道下 政功（防御側）：相手破壊でATK+600
-                if (defender.fieldMonster.id === CARD_ID.MICHISHITA) {
-                    defender.fieldMonster.permanentAtkBonus = (defender.fieldMonster.permanentAtkBonus || 0) + 600;
-                    gs.log(`道下 政功 ATK+600スタック！現在ATK:${defender.getEffectiveAtk(gs)}`);
+                if (defMonster.id === CARD_ID.MICHISHITA) {
+                    defMonster.permanentAtkBonus = (defMonster.permanentAtkBonus || 0) + 600;
+                    gs.log(`道下 政功 ATK+600スタック！現在ATK:${defender.getEffectiveAtk(gs, defSlot)}`);
                 }
-                destroyMonster(attacker, false);
+                destroyMonster(attacker, atkSlot, false);
             }
         }
     }
 
     // 攻撃宣言後の処理
     // 橋本 泰成: 戦闘終了後、勝敗に関わらず墓地へ
-    if (attacker.fieldMonster && attacker.fieldMonster.oneTimeAttacker) {
-        gs.log(`${attacker.fieldMonster.name}は戦闘を終えて墓地へ…`);
-        destroyMonster(attacker);
+    if (atkMonster && atkMonster.oneTimeAttacker) {
+        gs.log(`${atkMonster.name}は戦闘を終えて墓地へ…`);
+        destroyMonster(attacker, atkSlot);
     }
 
     gs.attackDeclaredThisTurn = true;
@@ -702,20 +728,57 @@ async function declareAttack() {
 // ===============================
 // モンスター破壊処理
 // ===============================
-function destroyMonster(player, isDirectAttack = false) {
-    if (!player.fieldMonster) return;
-    const monster = player.fieldMonster;
+function destroyMonster(player, slotIndex, isDirectAttack = false) {
+    if (!player.fieldMonster || !player.fieldMonster[slotIndex]) return;
+    const monster = player.fieldMonster[slotIndex];
     if (monster.onDestroy && !monster.effectNegated) {
         monster.onDestroy(gs, player, isDirectAttack);
     }
-    // 装備カードも墓地へ
-    if (monster.equipped === CARD_ID.YANI_JACKET && player.fieldMagic) {
-        player.graveyard.push(player.fieldMagic);
-        player.fieldMagic = null;
+    // 装備カードも墓地へ(暫定: 対象をインデックスで合わせる)
+    if (monster.equipped === CARD_ID.YANI_JACKET && player.fieldMagic && player.fieldMagic[slotIndex]) {
+        player.graveyard.push(player.fieldMagic[slotIndex]);
+        player.fieldMagic[slotIndex] = null;
     }
     player.graveyard.push(monster);
-    player.fieldMonster = null;
+    player.fieldMonster[slotIndex] = null;
     gs.log(`${player.name}の${monster.name}が破壊され墓地へ`);
+}
+
+// ===============================
+// ダメージポップアップ演出
+// ===============================
+function showFloatingDamage(amount, isPlayer1, isDirectAttack = false, slotIdx = 0) {
+    if (amount <= 0) return;
+    const overlay = document.createElement('div');
+    overlay.className = 'floating-damage';
+    overlay.textContent = `-${amount}`;
+
+    let targetEl;
+    if (isDirectAttack) {
+        targetEl = document.getElementById(isPlayer1 ? 'p1-lp' : 'p2-lp');
+    } else {
+        const zoneId = isPlayer1 ? 'p1-monster-zone' : 'p2-monster-zone';
+        const zone = document.getElementById(zoneId);
+        if (zone) {
+            const slots = zone.querySelectorAll('.field-slot');
+            if (slots[slotIdx]) targetEl = slots[slotIdx];
+        }
+    }
+
+    if (targetEl) {
+        const rect = targetEl.getBoundingClientRect();
+        overlay.style.left = `${rect.left + rect.width / 2 - 20}px`;
+        overlay.style.top = `${rect.top + rect.height / 2 - 20}px`;
+    } else {
+        overlay.style.left = '50%';
+        overlay.style.top = '50%';
+        overlay.style.transform = 'translate(-50%, -50%)';
+    }
+
+    document.body.appendChild(overlay);
+    setTimeout(() => {
+        if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+    }, 1000);
 }
 
 // ===============================
@@ -877,19 +940,16 @@ function renderHand(player) {
     cardsEl.className = 'hand-cards';
     if (!wasOpen) cardsEl.style.display = 'none';
 
-    // 手札の扇状配置用計算
-    const isMobile = window.innerWidth <= 768;
+    // 手札の扇状配置用計算 (全デバイス共通で適用)
     const total = player.hand.length;
     const angleStep = 8;
     const startAngle = -((total - 1) * angleStep) / 2;
 
     player.hand.forEach((card, idx) => {
         const el = createCardElement(card, idx, true);
-        if (isMobile) {
-            const angle = startAngle + idx * angleStep;
-            // 扇状になるように回転と微細なY軸調整
-            el.style.transform = `rotate(${angle}deg) translateY(-${Math.max(0, 10 - Math.abs(angle))}px)`;
-        }
+        const angle = startAngle + idx * angleStep;
+        // 扇状になるように回転と微細なY軸調整
+        el.style.transform = `rotate(${angle}deg) translateY(-${Math.max(0, 10 - Math.abs(angle))}px)`;
         cardsEl.appendChild(el);
     });
     el.appendChild(cardsEl);
@@ -943,27 +1003,18 @@ function createCardElement(card, idx, inHand = false) {
   `;
 
     if (inHand && canPlay) {
-        if (window.innerWidth <= 768) {
-            // スマホ：詳細モーダルから使用する
-            el.addEventListener('click', (e) => {
-                e.stopPropagation();
-                showCardDetail(card, () => useCard(idx), '✨ 使用 / 召喚する');
-            });
-        } else {
-            // PC：直で使用
-            el.addEventListener('click', () => useCard(idx));
-            el.title = 'クリックして使用';
-        }
+        // 使用可能な手札：詳細画面を開き、そこから使用する（全デバイス共通）
+        el.addEventListener('click', (e) => {
+            e.stopPropagation();
+            showCardDetail(card, () => useCard(idx), '✨ 使用 / 召喚する');
+        });
     } else {
         // 使用不可な手札、もしくはフィールドのカード（詳細表示）
-        if (window.innerWidth <= 768) {
-            el.addEventListener('click', (e) => {
-                e.stopPropagation();
-                // フィールド上のカードの場合は攻撃などができなくなるのを防ぐため、
-                // アクションがない単なる詳細表示として開く（PC版の操作体系と分ける）
-                showCardDetail(card);
-            });
-        }
+        el.addEventListener('click', (e) => {
+            e.stopPropagation();
+            // 単なる詳細表示として開く（アクションボタンなし）
+            showCardDetail(card);
+        });
     }
 
     // ULTRAMAN IN KANAZAWA: 捨てて発動ボタン
@@ -1001,22 +1052,55 @@ function renderField() {
     renderFieldZone('p2-magic-zone', gs.player2.fieldMagic, gs.player2);
 }
 
-function renderFieldZone(zoneId, card, player) {
-    const el = document.getElementById(zoneId);
-    if (!el) return;
-    el.innerHTML = '';
-    if (card) {
-        const cardEl = createCardElement(card, -1, false);
-        if (card.type === CARD_TYPE.MONSTER) {
-            const eff = player.getEffectiveAtk(gs);
-            if (eff !== card.atk) {
-                const atkEl = cardEl.querySelector('.card-atk');
-                if (atkEl) atkEl.textContent = `ATK: ${eff} (基:${card.atk})`;
+function renderFieldZone(zoneId, cards, player) {
+    const container = document.getElementById(zoneId);
+    if (!container) return;
+
+    // slot要素を取得 (0~4)
+    const slots = container.querySelectorAll('.field-slot');
+    if (slots.length === 0) return;
+
+    for (let i = 0; i < 5; i++) {
+        const slot = slots[i];
+        slot.innerHTML = ''; // 既存の表示をクリア
+        const card = cards ? cards[i] : null;
+
+        if (card) {
+            const cardEl = createCardElement(card, i, false);
+            // 盤面上のカードに属性（インデックス等）を持たせておく
+            cardEl.dataset.slotIndex = i;
+
+            if (card.type === CARD_TYPE.MONSTER) {
+                // (現状はgetEffectiveAtkが単体想定なので一旦カード自身のatkを使うが、後ほど個別計算へ改修する)
+                const baseAtk = card.atk;
+                let effAtk = baseAtk;
+                const temp = card.tempAtkBonus || 0;
+                const penalty = card.tempAtkPenalty || 0;
+                const perm = card.permanentAtkBonus || 0;
+                effAtk = Math.max(0, baseAtk + temp + perm - penalty);
+
+                // もし永続効果等がある場合は別途計算が必要だが、一旦暫定処理としてバッジを付ける
+                if (effAtk !== baseAtk) {
+                    const atkEl = cardEl.querySelector('.card-atk');
+                    if (atkEl) atkEl.textContent = `ATK: ${effAtk} (基:${baseAtk})`;
+                }
+
+                // 右下のミニバッジ表示追加 (UIとして)
+                const badge = document.createElement('div');
+                badge.className = 'card-atk-badge';
+                badge.textContent = effAtk;
+                cardEl.appendChild(badge);
+            } else if (card.type === CARD_TYPE.MAGIC) {
+                // 魔法カードバッジ
+                const badge = document.createElement('div');
+                badge.className = 'card-magic-badge';
+                badge.textContent = '魔';
+                cardEl.appendChild(badge);
             }
+            slot.appendChild(cardEl);
+        } else {
+            slot.innerHTML = '<div class="empty-zone">空き</div>';
         }
-        el.appendChild(cardEl);
-    } else {
-        el.innerHTML = '<div class="empty-zone">空き</div>';
     }
 }
 
@@ -1329,31 +1413,34 @@ function cancelOnlineHosting() {
 }
 
 // ===============================
-// レイアウト方向制御 (スマホ向け向かい合わせUI用)
+// レイアウト方向制御 (スマホ向け向かい合わせUI用 & 横画面配置固定用)
 // ===============================
 function updateLayoutDirection(isP1Me) {
     const p1Panel = document.getElementById('p1-panel');
-    if (!p1Panel) return;
-    const p1Zones = p1Panel.nextElementSibling; // div.field-zones
-    const p2Zones = p1Zones.nextElementSibling; // div.field-zones
+    const p1Zones = document.querySelector('.p1-field');
+    const p2Zones = document.querySelector('.p2-field');
     const p2Panel = document.getElementById('p2-panel');
 
+    if (!p1Panel || !p2Panel || !p1Zones || !p2Zones) return;
+
+    // 前回のクラスをリセット
     p1Panel.classList.remove('area-me-panel', 'area-opp-panel');
     p1Zones.classList.remove('area-me-zones', 'area-opp-zones');
     p2Panel.classList.remove('area-me-panel', 'area-opp-panel');
     p2Zones.classList.remove('area-me-zones', 'area-opp-zones');
 
+    // 不要になったインラインスタイルの除去
+    p1Panel.style.order = "";
+    p1Zones.style.order = "";
+    p2Panel.style.order = "";
+    p2Zones.style.order = "";
+
     if (isP1Me) {
-        p1Panel.classList.add('area-opp-panel'); // p1Panelは上部へ? いいえ、isP1MeならP1が手前なのでp1がme...
-        // 待って、HTMLのデフォルトはP1, P1Zones, P2Zones, P2の順。
-        // 上(1)がopp, 下(4)がmeにしたい。
-        // つまり isP1Me (自分がP1) なら、P1がme。
         p1Panel.classList.add('area-me-panel');
         p1Zones.classList.add('area-me-zones');
         p2Panel.classList.add('area-opp-panel');
         p2Zones.classList.add('area-opp-zones');
     } else {
-        // 自分がP2なら、P2が手前(me)になる
         p1Panel.classList.add('area-opp-panel');
         p1Zones.classList.add('area-opp-zones');
         p2Panel.classList.add('area-me-panel');
@@ -1562,8 +1649,8 @@ function _serializeState() {
         return {
             name: p.name, lp: p.lp,
             hand: hideHand ? p.hand.map(() => ({ id: 'hidden', name: '?', type: 'unknown', emoji: '🃏', color: '#1a1a2e' })) : p.hand.map(sc),
-            fieldMonster: sc(p.fieldMonster),
-            fieldMagic: sc(p.fieldMagic),
+            fieldMonster: p.fieldMonster.map(sc),
+            fieldMagic: p.fieldMagic.map(sc),
             graveyard: p.graveyard.map(sc)
         };
     }
