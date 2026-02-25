@@ -86,15 +86,20 @@
         <div class="battle-area">
 
             <!-- ===== P1 サイド（左半分） ===== -->
+            <!-- P1は 左:魔法 / 右:モンスター -->
             <div class="player-side p1-side">
-                <div class="zone-label">⚔️ モンスター</div>
-                <div class="field-zone-row" id="p1-monster-zone">
-                    <div class="field-slot monster-slot" data-index="0"></div>
+                <div class="field-col">
+                    <div class="zone-label">✨ 魔法</div>
+                    <div class="field-zone-row" id="p1-magic-zone">
+                        <div class="field-slot magic-slot" data-index="0"></div>
+                    </div>
                 </div>
                 <div class="zone-divider"></div>
-                <div class="zone-label">✨ 魔法</div>
-                <div class="field-zone-row" id="p1-magic-zone">
-                    <div class="field-slot magic-slot" data-index="0"></div>
+                <div class="field-col">
+                    <div class="zone-label">⚔️ モンスター</div>
+                    <div class="field-zone-row" id="p1-monster-zone">
+                        <div class="field-slot monster-slot" data-index="0"></div>
+                    </div>
                 </div>
             </div>
 
@@ -106,15 +111,20 @@
             </div>
 
             <!-- ===== P2 サイド（右半分） ===== -->
+            <!-- P2は 左:モンスター / 右:魔法 -->
             <div class="player-side p2-side">
-                <div class="zone-label">⚔️ モンスター</div>
-                <div class="field-zone-row" id="p2-monster-zone">
-                    <div class="field-slot monster-slot" data-index="0"></div>
+                <div class="field-col">
+                    <div class="zone-label">⚔️ モンスター</div>
+                    <div class="field-zone-row" id="p2-monster-zone">
+                        <div class="field-slot monster-slot" data-index="0"></div>
+                    </div>
                 </div>
                 <div class="zone-divider"></div>
-                <div class="zone-label">✨ 魔法</div>
-                <div class="field-zone-row" id="p2-magic-zone">
-                    <div class="field-slot magic-slot" data-index="0"></div>
+                <div class="field-col">
+                    <div class="zone-label">✨ 魔法</div>
+                    <div class="field-zone-row" id="p2-magic-zone">
+                        <div class="field-slot magic-slot" data-index="0"></div>
+                    </div>
                 </div>
             </div>
 
@@ -122,8 +132,8 @@
 
         <!-- 下部セクション：コントロール + 手札 -->
         <div class="bottom-section">
-            <!-- コントロールバー -->
-            <div class="controls-bar" style="pointer-events:none;">
+            <!-- コントロールバー (非表示) -->
+            <div class="controls-bar" style="display:none; pointer-events:none;">
                 <button class="btn btn-end-turn" id="btn-end-turn" onclick="endTurn()" style="pointer-events:auto;">✅
                     ターン終了</button>
 
@@ -136,13 +146,16 @@
             <!-- 手札エリア（画面最下部に固定） -->
             <div class="hand-section">
                 <div id="hand-area">
-                    <div class="hand-label">🃏 手札</div>
-                    <div class="hand-cards"></div>
+                    <div class="hand-header">
+                        <div class="hand-label">🃏 手札</div>
+                        <button class="btn-hand-toggle" onclick="toggleHand()">▼ 開く</button>
+                    </div>
+                    <div class="hand-cards" style="display: flex;"></div>
                 </div>
             </div>
         </div><!-- /bottom-section -->
 
-        <!-- 🍔 メニューボタン群 -->
+        <!-- 🍔 メニューボタン群 (右下に固定) -->
         <div class="menu-buttons-container">
             <button id="log-btn" class="menu-btn" onclick="toggleLogModal()" title="ゲームログ">📋</button>
             <button id="hamburger-btn" class="menu-btn" onclick="toggleHamburgerMenu()" title="メニュー">☰</button>

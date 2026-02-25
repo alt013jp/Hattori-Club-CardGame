@@ -927,6 +927,17 @@ function renderHand(player) {
     const wasOpen = !el.classList.contains('hand-closed');
     el.innerHTML = '';
 
+    const cardsEl = document.createElement('div');
+    cardsEl.className = 'hand-cards';
+    if (!wasOpen) cardsEl.style.display = 'none';
+
+    // 手札をフラットに並べて描画
+    player.hand.forEach((card, idx) => {
+        const cardNode = createCardElement(card, idx, true);
+        cardsEl.appendChild(cardNode);
+    });
+    el.appendChild(cardsEl);
+
     const headerEl = document.createElement('div');
     headerEl.className = 'hand-header';
 
@@ -941,18 +952,9 @@ function renderHand(player) {
 
     headerEl.appendChild(label);
     headerEl.appendChild(toggleBtn);
+
+    // ヘッダーを後から追加し、CSS的にも被らないように・背面へ行かないようにする
     el.appendChild(headerEl);
-
-    const cardsEl = document.createElement('div');
-    cardsEl.className = 'hand-cards';
-    if (!wasOpen) cardsEl.style.display = 'none';
-
-    // 手札をフラットに並べて描画（重なりはCSSで処理）
-    player.hand.forEach((card, idx) => {
-        const el = createCardElement(card, idx, true);
-        cardsEl.appendChild(el);
-    });
-    el.appendChild(cardsEl);
 
     if (!wasOpen) el.classList.add('hand-closed');
 }
@@ -2105,4 +2107,15 @@ function showCardDetail(card, actionCallback = null, actionText = '使用する'
 function closeCardDetail() {
     const modal = document.getElementById('card-detail-modal');
     if (modal) modal.style.display = 'none';
+}
+
+function toggleHand() {
+    const el = document.getElementById('hand-area');
+    if (!el) return;
+    if (el.classList.contains('hand-closed')) {
+        el.classList.remove('hand-closed');
+    } else {
+        el.classList.add('hand-closed');
+    }
+    renderAll();
 }

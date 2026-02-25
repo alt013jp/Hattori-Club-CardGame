@@ -682,9 +682,6 @@ body::before {
 }
 
 .hand-label,
-.btn-hand-toggle,
-.hand-label,
-.btn-hand-toggle,
 .hand-header {
   display: none !important;
   /* 扇状UIのためヘッダー系は原則不要 */
@@ -1710,7 +1707,7 @@ body::before {
 /* 🍔 メニューボタン群 (グローバル) */
 .menu-buttons-container {
   position: fixed;
-  top: 20px;
+  bottom: 20px;
   right: 20px;
   display: flex;
   gap: 15px;
@@ -2319,11 +2316,20 @@ body::before {
 .player-side {
   flex: 1;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
   justify-content: center;
-  padding: 12px 16px;
-  gap: 10px;
+  padding: 8px 12px;
+  gap: 15px;
+}
+
+/* -- 左右並び用の列 -- */
+.field-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
 }
 
 /* -- ゾーンラベル -- */
@@ -2369,10 +2375,10 @@ body::before {
 
 /* -- モンスターゾーンとマジックゾーンの間の区切り線 -- */
 .zone-divider {
-  width: 80%;
-  height: 1px;
+  width: 1px;
+  height: 80px;
   background: rgba(255, 255, 255, 0.1);
-  margin: 2px 0;
+  margin: 0;
 }
 
 /* -- 中央の縦仕切り -- */
@@ -2423,36 +2429,74 @@ body::before {
 /* controls-bar配下のdice-sectionを相対配置に */
 .bottom-section .dice-section {
   position: static;
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 6px;
+  display: none;
+  /* 一時的に非表示 */
 }
 
 /* -- 手札セクション: 下端に固定 -- */
 .bottom-section .hand-section {
   position: static;
+  transform: none;
+  width: 100%;
+  pointer-events: auto;
   padding: 0;
 }
 
 .bottom-section #hand-area {
   position: static;
-  height: 120px;
   width: 100%;
+  height: auto;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-end;
+  /* padding-bottom を少し持たせておく */
+  padding-bottom: 5px;
 }
 
-/* hand-labelを復活 */
-.bottom-section .hand-label,
+/* hand-label, toggle を復活 */
 .bottom-section .hand-header {
+  position: relative;
+  z-index: 200;
+  display: flex !important;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 15px;
+  background: rgba(0, 0, 0, 0.75);
+  border-radius: 10px 10px 0 0;
+  justify-content: center;
+  margin-top: 5px;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.5);
+}
+
+.bottom-section .hand-label {
   display: block !important;
-  font-size: 0.7rem;
-  color: rgba(255, 255, 255, 0.5);
-  text-align: center;
-  padding: 2px 0;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: bold;
+}
+
+.bottom-section .btn-hand-toggle {
+  display: inline-block !important;
+  /* 表示を復活 */
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #fff;
+  font-size: 0.65rem;
+  padding: 2px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  outline: none;
+}
+
+.bottom-section .btn-hand-toggle:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* 手札が閉じている時用 */
+#hand-area.hand-closed .hand-cards {
+  display: none !important;
 }
 
 /* 手札の .hand-cards レイアウト */
