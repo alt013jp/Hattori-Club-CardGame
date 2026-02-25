@@ -2231,3 +2231,269 @@ body::before {
   pointer-events: none;
   /* 選択中は自分のカード操作をブロック */
 }
+
+/* ============================================ */
+/* Phase 16: 左右分割・1対1フィールドレイアウト  */
+/* ============================================ */
+
+/* -- ゲーム画面の全体構造 -- */
+#game-screen {
+  display: none;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+  padding: 0;
+  gap: 0;
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(to bottom, #0f172a, #1e293b);
+}
+
+/* -- トップバー: LP x2 + 中央ターン情報 -- */
+.g-topbar {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 12px;
+  background: rgba(0, 0, 0, 0.5);
+  border-bottom: 1px solid rgba(201, 162, 39, 0.3);
+  flex-shrink: 0;
+  gap: 8px;
+  min-height: 56px;
+}
+
+.g-topbar .player-panel {
+  position: static;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  padding: 4px 10px;
+  width: auto;
+  min-width: 0;
+  flex: 1;
+  max-width: 200px;
+}
+
+.g-topbar-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  flex: 1;
+}
+
+#turn-badge {
+  font-family: 'Cinzel', serif;
+  font-size: 0.7rem;
+  color: var(--accent-gold);
+  text-align: center;
+  white-space: nowrap;
+}
+
+#phase-display {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--accent-gold);
+  text-align: center;
+}
+
+#mode-badge {
+  font-size: 0.6rem;
+}
+
+/* -- バトルエリア: 左右分割で flex-row -- */
+.battle-area {
+  display: flex;
+  flex-direction: row;
+  flex: 1;
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* -- 各プレイヤーのサイド -- */
+.player-side {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 16px;
+  gap: 10px;
+}
+
+/* -- ゾーンラベル -- */
+.zone-label {
+  font-size: 0.65rem;
+  color: rgba(255, 255, 255, 0.5);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  font-weight: 600;
+  text-align: center;
+}
+
+/* -- フィールドゾーン行(1スロット) -- */
+.field-zone-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* 1スロット専用のサイズ - 大きめに設定 */
+.field-zone-row .field-slot {
+  width: 130px;
+  height: 130px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.3s, background 0.3s;
+}
+
+.field-zone-row .field-slot:hover {
+  border-color: rgba(255, 255, 255, 0.65);
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.field-zone-row .field-slot:has(.card) {
+  border-color: rgba(201, 162, 39, 0.8);
+  background: transparent;
+  box-shadow: 0 0 14px rgba(201, 162, 39, 0.3);
+}
+
+/* -- モンスターゾーンとマジックゾーンの間の区切り線 -- */
+.zone-divider {
+  width: 80%;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.1);
+  margin: 2px 0;
+}
+
+/* -- 中央の縦仕切り -- */
+.field-divider {
+  width: 32px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.divider-line {
+  width: 2px;
+  flex: 1;
+  background: linear-gradient(to bottom, transparent, rgba(201, 162, 39, 0.5), transparent);
+  border-radius: 1px;
+}
+
+.divider-icon {
+  font-size: 1.2rem;
+  opacity: 0.6;
+  flex-shrink: 0;
+}
+
+/* -- 下部セクション(コントロール + 手札) -- */
+.bottom-section {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  background: rgba(0, 0, 0, 0.35);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* controls-barの固定配置を解除してflowに戻す */
+.bottom-section .controls-bar {
+  position: static;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 6px 16px;
+  pointer-events: none;
+}
+
+/* controls-bar配下のdice-sectionを相対配置に */
+.bottom-section .dice-section {
+  position: static;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+}
+
+/* -- 手札セクション: 下端に固定 -- */
+.bottom-section .hand-section {
+  position: static;
+  padding: 0;
+}
+
+.bottom-section #hand-area {
+  position: static;
+  height: 120px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+/* hand-labelを復活 */
+.bottom-section .hand-label,
+.bottom-section .hand-header {
+  display: block !important;
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.5);
+  text-align: center;
+  padding: 2px 0;
+}
+
+/* 手札の .hand-cards レイアウト */
+.bottom-section .hand-cards {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 0;
+  width: 100%;
+  overflow-x: auto;
+  padding: 0 8px 4px;
+}
+
+/* 手札のカードサイズ */
+.bottom-section .hand-cards .card {
+  width: 80px;
+  height: 110px;
+  margin-left: -20px;
+  flex-shrink: 0;
+  position: relative;
+  transition: transform 0.2s ease, box-shadow 0.2s;
+}
+
+.bottom-section .hand-cards .card:first-child {
+  margin-left: 0;
+}
+
+.bottom-section .hand-cards .card:hover {
+  z-index: 50 !important;
+  transform: translateY(-18px) scale(1.1) !important;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.8), 0 0 12px rgba(201, 162, 39, 0.5);
+}
+
+/* 1対1フィールド時のアタックターゲット選択: p2-sideを赤くパルス */
+.targeting-mode .p2-side .field-slot:has(.card-monster) {
+  animation: target-pulse 1.5s infinite;
+  cursor: crosshair !important;
+}
+
+.targeting-mode .p1-side .field-slot {
+  opacity: 0.45;
+  pointer-events: none;
+}

@@ -26,8 +26,8 @@ class Player {
         this.isHuman = isHuman;
         this.lp = 4000;
         this.hand = [];
-        this.fieldMonster = [null, null, null, null, null];
-        this.fieldMagic = [null, null, null, null, null];
+        this.fieldMonster = [null]; // 1対1: 最大1枚
+        this.fieldMagic = [null];   // 1対1: 最大1枚
         this.graveyard = [];
         this.skipNextDraw = false;
         this.delayedEffects = []; // { type: 'damage', amount: 2000, countdown: 2, message: '...' }
@@ -1115,23 +1115,34 @@ function renderFieldZone(zoneId, cards, player) {
     const container = document.getElementById(zoneId);
     if (!container) return;
 
-    // slot要素を取得 (0~4)
+    // slot要素を取得 (今は0のみ = 1枚)
     const slots = container.querySelectorAll('.field-slot');
     if (slots.length === 0) return;
 
-    for (let i = 0; i < 5; i++) {
+    // 1対1モード: スロットは1つのみ
+    const maxSlots = Math.min(slots.length, cards ? cards.length : 1);
+    for (let i = 0; i < maxSlots; i++) {
         const slot = slots[i];
         slot.innerHTML = ''; // 既存の表示をクリア
         const card = cards ? cards[i] : null;
+
+        // P1のデータならme/oppをplayer1かどうかで判定
+        const isP1Zone = zoneId.startsWith('p1-');
+        let ownerAttr;
+        if (gs._isOnlineHost) {
+            ownerAttr = isP1Zone ? 'me' : 'opp';
+        } else {
+            // ローカル模輷時: 現在のプレイヤーのスロットが 'me'
+            ownerAttr = (player === gs.currentPlayer) ? 'me' : 'opp';
+        }
 
         if (card) {
             const cardEl = createCardElement(card, i, false);
             // 盤面上のカードに属性（インデックス等）を持たせておく
             cardEl.dataset.slotIndex = i;
-            cardEl.dataset.owner = (player === gs.currentPlayer) ? 'me' : 'opp';
+            cardEl.dataset.owner = ownerAttr;
 
             if (card.type === CARD_TYPE.MONSTER) {
-                // (現状はgetEffectiveAtkが単体想定なので一旦カード自身のatkを使うが、後ほど個別計算へ改修する)
                 const baseAtk = card.atk;
                 let effAtk = baseAtk;
                 const temp = card.tempAtkBonus || 0;
@@ -1139,19 +1150,16 @@ function renderFieldZone(zoneId, cards, player) {
                 const perm = card.permanentAtkBonus || 0;
                 effAtk = Math.max(0, baseAtk + temp + perm - penalty);
 
-                // もし永続効果等がある場合は別途計算が必要だが、一旦暫定処理としてバッジを付ける
                 if (effAtk !== baseAtk) {
                     const atkEl = cardEl.querySelector('.card-atk');
                     if (atkEl) atkEl.textContent = `ATK: ${effAtk} (基:${baseAtk})`;
                 }
 
-                // 右下のミニバッジ表示追加 (UIとして)
                 const badge = document.createElement('div');
                 badge.className = 'card-atk-badge';
                 badge.textContent = effAtk;
                 cardEl.appendChild(badge);
             } else if (card.type === CARD_TYPE.MAGIC) {
-                // 魔法カードバッジ
                 const badge = document.createElement('div');
                 badge.className = 'card-magic-badge';
                 badge.textContent = '魔';

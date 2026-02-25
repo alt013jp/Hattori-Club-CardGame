@@ -55,94 +55,94 @@
     <!-- ========== ゲーム画面 ========== -->
     <div id="game-screen">
 
-        <!-- ヘッダー -->
-        <div class="game-header">
-            <div id="turn-badge">ターン 1 | プレイヤー1 のターン</div>
-            <div id="phase-display">ドローフェイズ</div>
-            <div id="mode-badge" class="mode-badge normal-mode">⚔️ 対戦モード</div>
-        </div>
-
-        <!-- フィールドエリア -->
-        <div class="field-area">
-
-            <!-- プレイヤー1パネル（左） -->
+        <!-- ゲームトップバー（LP情報・フェイズ表示） -->
+        <div class="g-topbar">
             <div class="player-panel" id="p1-panel">
                 <div class="player-name" id="p1-name">プレイヤー1</div>
                 <div class="lp-display">
-                    <span class="lp-label">LIFE POINTS</span>
+                    <span class="lp-label">LP</span>
                     <span class="lp-value" id="p1-lp">4000</span>
                 </div>
                 <div id="p1-graveyard"></div>
             </div>
 
-            <!-- プレイヤー1フィールド (奥) -->
-            <div class="field-zones p1-field">
-                <div class="field-row magic-row" id="p1-magic-zone">
-                    <div class="field-slot magic-slot" data-index="0"></div>
-                    <div class="field-slot magic-slot" data-index="1"></div>
-                    <div class="field-slot magic-slot" data-index="2"></div>
-                    <div class="field-slot magic-slot" data-index="3"></div>
-                    <div class="field-slot magic-slot" data-index="4"></div>
-                </div>
-                <div class="field-row monster-row" id="p1-monster-zone">
-                    <div class="field-slot monster-slot" data-index="0"></div>
-                    <div class="field-slot monster-slot" data-index="1"></div>
-                    <div class="field-slot monster-slot" data-index="2"></div>
-                    <div class="field-slot monster-slot" data-index="3"></div>
-                    <div class="field-slot monster-slot" data-index="4"></div>
-                </div>
+            <div class="g-topbar-center">
+                <div id="turn-badge">ターン 1 | P1 のターン</div>
+                <div id="phase-display">ドローフェイズ</div>
+                <div id="mode-badge" class="mode-badge normal-mode">⚔️ 対戦</div>
             </div>
 
-            <!-- プレイヤー2フィールド (手前) -->
-            <div class="field-zones p2-field">
-                <div class="field-row monster-row" id="p2-monster-zone">
-                    <div class="field-slot monster-slot" data-index="0"></div>
-                    <div class="field-slot monster-slot" data-index="1"></div>
-                    <div class="field-slot monster-slot" data-index="2"></div>
-                    <div class="field-slot monster-slot" data-index="3"></div>
-                    <div class="field-slot monster-slot" data-index="4"></div>
-                </div>
-                <div class="field-row magic-row" id="p2-magic-zone">
-                    <div class="field-slot magic-slot" data-index="0"></div>
-                    <div class="field-slot magic-slot" data-index="1"></div>
-                    <div class="field-slot magic-slot" data-index="2"></div>
-                    <div class="field-slot magic-slot" data-index="3"></div>
-                    <div class="field-slot magic-slot" data-index="4"></div>
-                </div>
-            </div>
-
-            <!-- プレイヤー2パネル（右） -->
-            <div class="player-panel p2-panel" id="p2-panel">
+            <div class="player-panel" id="p2-panel">
                 <div class="player-name" id="p2-name">プレイヤー2</div>
                 <div class="lp-display">
-                    <span class="lp-label">LIFE POINTS</span>
+                    <span class="lp-label">LP</span>
                     <span class="lp-value" id="p2-lp">4000</span>
                 </div>
                 <div id="p2-graveyard"></div>
             </div>
-
-        </div><!-- /field-area -->
-
-        <!-- 手札エリア -->
-        <div class="hand-section">
-            <div id="hand-area">
-                <div class="hand-label">🃏 手札</div>
-                <div class="hand-cards"></div>
-            </div>
         </div>
 
-        <!-- コントロールバー -->
-        <div class="controls-bar" style="pointer-events:none;">
-            <button class="btn btn-end-turn" id="btn-end-turn" onclick="endTurn()" style="pointer-events:auto;">✅
-                ターン終了</button>
+        <!-- バトルフィールド（左右分割） -->
+        <div class="battle-area">
 
-            <div class="dice-section" style="pointer-events:auto;">
-                <span class="dice-label">ダイス</span>
-                <span id="dice-display">🎲</span>
+            <!-- ===== P1 サイド（左半分） ===== -->
+            <div class="player-side p1-side">
+                <div class="zone-label">⚔️ モンスター</div>
+                <div class="field-zone-row" id="p1-monster-zone">
+                    <div class="field-slot monster-slot" data-index="0"></div>
+                </div>
+                <div class="zone-divider"></div>
+                <div class="zone-label">✨ 魔法</div>
+                <div class="field-zone-row" id="p1-magic-zone">
+                    <div class="field-slot magic-slot" data-index="0"></div>
+                </div>
             </div>
-        </div>
 
-        <!-- 🍔 メニューボタン群 (スマホ・PC共通で右下配置など) -->
+            <!-- 中央仕切り -->
+            <div class="field-divider">
+                <div class="divider-line"></div>
+                <span class="divider-icon">⚔️</span>
+                <div class="divider-line"></div>
+            </div>
+
+            <!-- ===== P2 サイド（右半分） ===== -->
+            <div class="player-side p2-side">
+                <div class="zone-label">⚔️ モンスター</div>
+                <div class="field-zone-row" id="p2-monster-zone">
+                    <div class="field-slot monster-slot" data-index="0"></div>
+                </div>
+                <div class="zone-divider"></div>
+                <div class="zone-label">✨ 魔法</div>
+                <div class="field-zone-row" id="p2-magic-zone">
+                    <div class="field-slot magic-slot" data-index="0"></div>
+                </div>
+            </div>
+
+        </div><!-- /battle-area -->
+
+        <!-- 下部セクション：コントロール + 手札 -->
+        <div class="bottom-section">
+            <!-- コントロールバー -->
+            <div class="controls-bar" style="pointer-events:none;">
+                <button class="btn btn-end-turn" id="btn-end-turn" onclick="endTurn()" style="pointer-events:auto;">✅
+                    ターン終了</button>
+
+                <div class="dice-section" style="pointer-events:auto;">
+                    <span class="dice-label">ダイス</span>
+                    <span id="dice-display">🎲</span>
+                </div>
+            </div>
+
+            <!-- 手札エリア（画面最下部に固定） -->
+            <div class="hand-section">
+                <div id="hand-area">
+                    <div class="hand-label">🃏 手札</div>
+                    <div class="hand-cards"></div>
+                </div>
+            </div>
+        </div><!-- /bottom-section -->
+
+        <!-- 🍔 メニューボタン群 -->
         <div class="menu-buttons-container">
             <button id="log-btn" class="menu-btn" onclick="toggleLogModal()" title="ゲームログ">📋</button>
             <button id="hamburger-btn" class="menu-btn" onclick="toggleHamburgerMenu()" title="メニュー">☰</button>
