@@ -1021,38 +1021,48 @@ function renderHand(player) {
     headerEl.style.display = 'flex';
     headerEl.style.justifyContent = 'center';
     headerEl.style.gap = '10px';
+    headerEl.style.marginBottom = '5px'; // 少し隙間を開ける
 
     const toggleBtn = document.createElement('button');
     toggleBtn.className = 'btn-hand-toggle';
-    toggleBtn.textContent = wasOpen ? '▲ 閉じる' : '▼ 開く';
+    toggleBtn.style.padding = '4px 12px';
+    toggleBtn.style.borderRadius = '4px';
+    toggleBtn.style.background = 'linear-gradient(135deg, #111, #333)';
+    toggleBtn.style.color = 'white';
+    toggleBtn.style.border = '1px solid #555';
+    toggleBtn.style.cursor = 'pointer';
+    toggleBtn.textContent = wasOpen ? '▼ 手札を隠す' : '▲ 手札を見る';
     toggleBtn.onclick = toggleHand;
     headerEl.appendChild(toggleBtn);
 
-    const attackBtn = document.createElement('button');
-    attackBtn.className = 'btn-attack-declare';
-    attackBtn.id = 'btn-declare-attack';
-    attackBtn.style.fontWeight = 'bold';
-    attackBtn.style.background = 'linear-gradient(135deg, #c92727, #8a0c0c)';
-    attackBtn.style.color = 'white';
-    attackBtn.style.border = '2px solid #ff4d4d';
-    attackBtn.style.borderRadius = '4px';
-    attackBtn.style.padding = '4px 12px';
-    attackBtn.style.cursor = 'pointer';
-    attackBtn.innerHTML = '⚔️ 攻撃する';
-    attackBtn.onclick = triggerFieldAttack;
+    const endTurnBtn = document.createElement('button');
+    endTurnBtn.className = 'btn-end-turn-header';
+    endTurnBtn.style.padding = '4px 12px';
+    endTurnBtn.style.borderRadius = '4px';
+    endTurnBtn.style.background = 'linear-gradient(135deg, #001a0a, #003311)';
+    endTurnBtn.style.color = '#00ff88';
+    endTurnBtn.style.border = '1px solid #00ff88';
+    endTurnBtn.style.cursor = 'pointer';
+    endTurnBtn.style.fontWeight = 'bold';
+    endTurnBtn.textContent = '✅ ターン終了';
+    endTurnBtn.onclick = () => {
+        if (gs && (gs.phase === PHASE.MAIN || gs.phase === PHASE.BATTLE)) {
+            endTurn();
+        }
+    };
 
-    // 自分のターン（ホストならP1、ゲスト判定など）のメインフェイズ・バトルフェイズのみ表示
+    // 自分のターンのメイン/バトルフェイズのみ表示
     if (gs && gs._isOnlineHost ? (gs.currentPlayer === gs.player1) : true) {
         if (gs && (gs.phase === PHASE.MAIN || gs.phase === PHASE.BATTLE)) {
-            attackBtn.style.display = 'block';
+            endTurnBtn.style.display = 'block';
         } else {
-            attackBtn.style.display = 'none';
+            endTurnBtn.style.display = 'none';
         }
     } else {
-        attackBtn.style.display = 'none';
+        endTurnBtn.style.display = 'none';
     }
 
-    headerEl.appendChild(attackBtn);
+    headerEl.appendChild(endTurnBtn);
 
     // ヘッダーを後から追加し、CSS的にも被らないように・背面へ行かないようにする
     el.appendChild(headerEl);
@@ -1967,18 +1977,30 @@ function _renderAsGuest(state) {
 
         const headerEl = document.createElement('div');
         headerEl.className = 'hand-header';
+        headerEl.style.display = 'flex';
+        headerEl.style.justifyContent = 'center';
+        headerEl.style.gap = '10px';
+        headerEl.style.marginBottom = '5px';
 
-        const label = document.createElement('div');
-        label.className = 'hand-label';
-        // 手札ラベル内に両方の情報を表示
-        label.innerHTML = `<span style="color:#aaa;font-size:0.75rem;">相手の手札: ${state.p1.hand.length}枚</span> &nbsp;|&nbsp; 🃏 あなたの手札 (${state.p2.hand.length}枚)`;
+        const infoLabel = document.createElement('div');
+        infoLabel.style.color = '#fff';
+        infoLabel.style.fontSize = '0.8rem';
+        infoLabel.style.display = 'flex';
+        infoLabel.style.alignItems = 'center';
+        infoLabel.innerHTML = `相手の手札: ${state.p1.hand.length}枚 | あなたの手札: ${state.p2.hand.length}枚`;
 
         const toggleBtn = document.createElement('button');
         toggleBtn.className = 'btn-hand-toggle';
-        toggleBtn.textContent = wasOpen ? '▲ 閉じる' : '▼ 開く';
+        toggleBtn.style.padding = '4px 12px';
+        toggleBtn.style.borderRadius = '4px';
+        toggleBtn.style.background = 'linear-gradient(135deg, #111, #333)';
+        toggleBtn.style.color = 'white';
+        toggleBtn.style.border = '1px solid #555';
+        toggleBtn.style.cursor = 'pointer';
+        toggleBtn.textContent = wasOpen ? '▼ 手札を隠す' : '▲ 手札を見る';
         toggleBtn.onclick = toggleHand;
 
-        headerEl.appendChild(label);
+        headerEl.appendChild(infoLabel);
         headerEl.appendChild(toggleBtn);
         handEl.appendChild(headerEl);
 
@@ -1991,16 +2013,6 @@ function _renderAsGuest(state) {
             const actionFn = isMyTurn ? () => _sendOnlineAction({ type: 'play_hand_card', handIndex: idx }) : null;
             const el = _makeGuestCardEl(card, actionFn);
 
-            // ゲスト側 スマホ扇状手札
-            if (window.innerWidth <= 768) {
-                const total = state.p2.hand.length;
-                const angleStep = 8;
-                const startAngle = -((total - 1) * angleStep) / 2;
-                const angle = startAngle + idx * angleStep;
-                el.style.transform = `rotate(${angle}deg) translateY(-${Math.max(0, 10 - Math.abs(angle))}px)`;
-            }
-
-            // 相手ターン中での明度低下（opacity=0.6）を削除
             cardsContainer.appendChild(el);
         });
         handEl.appendChild(cardsContainer);
