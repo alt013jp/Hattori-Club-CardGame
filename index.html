@@ -40,6 +40,10 @@
                 🌐 オンライン対戦<br>
                 <small style="font-size:0.7rem;opacity:0.8">LAN内の2人対戦</small>
             </button>
+            <button class="btn-mode btn-local" id="btn-local-game" onclick="startLocalGame()">
+                🤝 ローカル対戦<br>
+                <small style="font-size:0.7rem;opacity:0.8">1台の端末で2人で遊ぶ</small>
+            </button>
             <button class="btn-mode btn-test" id="btn-test-game" onclick="startTestGame()">
                 🧪 カード検証モード<br>
                 <small style="font-size:0.7rem;opacity:0.8">カード効果・システム確認</small>
@@ -156,8 +160,6 @@
 
         <!-- 🍔 メニューボタン群 (右下に固定) -->
         <div class="menu-buttons-container" style="display:flex; flex-direction:row; gap:10px;">
-            <button id="end-turn-menu-btn" class="menu-btn" onclick="endTurn()" title="ターン終了"
-                style="background: linear-gradient(135deg, #cc0000, #880000);">🛑</button>
             <button id="log-btn" class="menu-btn" onclick="toggleLogModal()" title="ゲームログ">📋</button>
             <button id="back-title-btn" class="menu-btn" onclick="goToTitle()" title="タイトルへ戻る">🏠</button>
         </div>

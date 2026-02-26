@@ -184,10 +184,14 @@ body::before {
   flex-direction: column;
   height: 100vh;
   padding: 0;
-  /* paddingを詰めて領域を広げる */
+  padding-bottom: 220px;
+  /* 手札エリア分の余白を確保し、下部が隠れないようにする */
+  box-sizing: border-box;
   gap: 0;
   position: relative;
   z-index: 1;
+  overflow-y: auto;
+  /* 縦画面や小さい画面でスクロール可能にする */
 }
 
 /* ===== ヘッダー ===== */
@@ -248,6 +252,8 @@ body::before {
   flex: 1;
   width: 100%;
   position: relative;
+  padding-bottom: 40px;
+  /* カード下部の攻撃力テキストが見切れないように隙間を空ける */
 }
 
 /* 中央VS境界線 */
@@ -668,7 +674,8 @@ body::before {
 /* ===== 手札エリア ===== */
 .hand-section {
   position: fixed;
-  bottom: -10px;
+  bottom: 0px;
+  /* カード下部（攻撃力）が見切れないように0px（または正の値）に設定 */
   left: 50%;
   transform: translateX(-50%);
   width: 100%;
