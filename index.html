@@ -27,15 +27,6 @@
             <p class="title-sub">～ハットリ会会長決定戦～</p>
         </div>
         <div class="mode-buttons">
-            <button class="btn-mode btn-battle" id="btn-normal-game" onclick="startNormalGame()">
-                ⚔️ 通常対戦モード<br>
-                <small style="font-size:0.7rem;opacity:0.8">2プレイヤー交互対戦</small>
-            </button>
-            <button class="btn-mode btn-local" id="btn-local-game" onclick="startLocalGame()"
-                style="background: linear-gradient(135deg, #FF9800, #F57C00);">
-                🔥 ローカル対戦<br>
-                <small style="font-size:0.7rem;opacity:0.8">1台で交互プレイ</small>
-            </button>
             <button class="btn-mode btn-online" id="btn-online-game" onclick="showOnlineModal()"
                 style="background: linear-gradient(135deg, #00b4d8, #0077b6);">
                 🌐 オンライン対戦<br>
@@ -59,9 +50,10 @@
         <div class="g-topbar">
             <div class="player-panel" id="p1-panel">
                 <div class="player-name" id="p1-name">プレイヤー1</div>
-                <div class="lp-display">
+                <div class="lp-display" style="position:relative;">
                     <span class="lp-label">LP</span>
                     <span class="lp-value" id="p1-lp">4000</span>
+                    <div id="p1-damage-text" class="damage-text"></div>
                 </div>
                 <div class="grave-display">
                     <button class="btn-graveyard" onclick="showGraveyard('p1')">🪦 墓地</button>
@@ -76,9 +68,10 @@
 
             <div class="player-panel" id="p2-panel">
                 <div class="player-name" id="p2-name">プレイヤー2</div>
-                <div class="lp-display">
+                <div class="lp-display" style="position:relative;">
                     <span class="lp-label">LP</span>
                     <span class="lp-value" id="p2-lp">4000</span>
+                    <div id="p2-damage-text" class="damage-text"></div>
                 </div>
                 <div class="grave-display">
                     <button class="btn-graveyard" onclick="showGraveyard('p2')">🪦 墓地</button>
@@ -111,8 +104,6 @@
             <!-- 中央仕切り -->
             <div class="field-divider">
                 <div class="divider-line"></div>
-                <button class="divider-icon" onclick="triggerFieldAttack()" title="攻撃する"
-                    style="background:none; border:none; font-size:2.5rem; cursor:pointer; padding:0; position:relative; z-index:100; pointer-events:auto; filter:drop-shadow(0 0 5px rgba(255,255,255,0.8));">⚔️</button>
                 <div class="divider-line"></div>
             </div>
 
@@ -147,8 +138,11 @@
             <!-- 手札エリア（画面最下部に固定） -->
             <div class="hand-section">
                 <div id="hand-area">
-                    <div class="hand-header">
-                        <button class="btn-hand-toggle" onclick="toggleHand()">▼ 開く</button>
+                    <div class="hand-header" style="display:flex; justify-content:center; gap:10px;">
+                        <button class="btn-hand-toggle" onclick="toggleHand()">▼ 閉じる</button>
+                        <button class="btn-attack-declare" id="btn-declare-attack" onclick="triggerFieldAttack()"
+                            style="font-weight:bold; background:linear-gradient(135deg, #c92727, #8a0c0c); color:white; border:2px solid #ff4d4d; border-radius:4px; padding:4px 12px; cursor:pointer;">⚔️
+                            攻撃する</button>
                     </div>
                     <div class="hand-cards" style="display: flex;"></div>
                 </div>

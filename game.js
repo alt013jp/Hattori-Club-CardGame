@@ -95,16 +95,9 @@ class GameState {
 
     // 非同期ダイスロール（演出待ち）
     async rollDice() {
-        const el = document.getElementById('dice-display');
-        if (el) {
-            el.classList.add('dice-roll-anim');
-            el.textContent = '🎲';
-        }
+        // フルスクリーンのダイスアニメーションを表示
+        const faces = ['', '⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
 
-        // 1秒待機（回転演出）
-        await new Promise(r => setTimeout(r, 1000));
-
-        // ダイス確定は、その権利を持っているプレイヤーがロールした時のみ有効
         let result;
         if (this.diceForceMaxOwner && this.diceForceMaxOwner === this.currentPlayer) {
             result = 6;
@@ -112,8 +105,32 @@ class GameState {
             result = Math.floor(Math.random() * 6) + 1;
         }
         this.diceResult = result;
+        const faceChar = faces[result] || result;
 
-        if (el) el.classList.remove('dice-roll-anim');
+        const overlay = document.createElement('div');
+        overlay.className = 'central-dice-overlay';
+
+        const cube = document.createElement('div');
+        cube.className = 'central-dice-cube';
+        cube.textContent = '🎲';
+
+        const resText = document.createElement('div');
+        resText.className = 'dice-result-text';
+        resText.textContent = `結果: ${result}`;
+
+        overlay.appendChild(cube);
+        document.body.appendChild(overlay);
+
+        // 1.5秒間は回転アニメーション、その後に目を確定させて結果の数字も出す
+        await new Promise(r => setTimeout(r, 1500));
+        cube.textContent = faceChar;
+        overlay.appendChild(resText);
+
+        // 回転後さらに1秒ほど結果を表示してから消去
+        await new Promise(r => setTimeout(r, 1000));
+        if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+
+        // 従来の小さなダイス表示も一応更新しておく
         renderDice(result);
 
         return result;
@@ -821,6 +838,18 @@ function destroyMonster(player, slotIndex, isDirectAttack = false) {
 // ===============================
 function showFloatingDamage(amount, isPlayer1, isDirectAttack = false, slotIdx = 0) {
     if (amount <= 0) return;
+
+    // LPテキスト直下の赤テキストアニメーション
+    const dmgElId = isPlayer1 ? 'p1-damage-text' : 'p2-damage-text';
+    const dmgEl = document.getElementById(dmgElId);
+    if (dmgEl) {
+        dmgEl.textContent = `-${amount}`;
+        dmgEl.classList.remove('damage-anim');
+        void dmgEl.offsetWidth; // reflow
+        dmgEl.classList.add('damage-anim');
+    }
+
+    // 従来のフィールドの対象モンスター等から浮き出るダメージ
     const overlay = document.createElement('div');
     overlay.className = 'floating-damage';
     overlay.textContent = `-${amount}`;
@@ -1012,13 +1041,41 @@ function renderHand(player) {
 
     const headerEl = document.createElement('div');
     headerEl.className = 'hand-header';
+    headerEl.style.display = 'flex';
+    headerEl.style.justifyContent = 'center';
+    headerEl.style.gap = '10px';
 
     const toggleBtn = document.createElement('button');
     toggleBtn.className = 'btn-hand-toggle';
     toggleBtn.textContent = wasOpen ? '▲ 閉じる' : '▼ 開く';
     toggleBtn.onclick = toggleHand;
-
     headerEl.appendChild(toggleBtn);
+
+    const attackBtn = document.createElement('button');
+    attackBtn.className = 'btn-attack-declare';
+    attackBtn.id = 'btn-declare-attack';
+    attackBtn.style.fontWeight = 'bold';
+    attackBtn.style.background = 'linear-gradient(135deg, #c92727, #8a0c0c)';
+    attackBtn.style.color = 'white';
+    attackBtn.style.border = '2px solid #ff4d4d';
+    attackBtn.style.borderRadius = '4px';
+    attackBtn.style.padding = '4px 12px';
+    attackBtn.style.cursor = 'pointer';
+    attackBtn.innerHTML = '⚔️ 攻撃する';
+    attackBtn.onclick = triggerFieldAttack;
+
+    // 自分のターン（ホストならP1、ゲスト判定など）のメインフェイズ・バトルフェイズのみ表示
+    if (gs && gs._isOnlineHost ? (gs.currentPlayer === gs.player1) : true) {
+        if (gs && (gs.phase === PHASE.MAIN || gs.phase === PHASE.BATTLE)) {
+            attackBtn.style.display = 'block';
+        } else {
+            attackBtn.style.display = 'none';
+        }
+    } else {
+        attackBtn.style.display = 'none';
+    }
+
+    headerEl.appendChild(attackBtn);
 
     // ヘッダーを後から追加し、CSS的にも被らないように・背面へ行かないようにする
     el.appendChild(headerEl);
