@@ -429,7 +429,7 @@ body::before {
 
 /* モンスター・魔法それぞれのスロット枠 */
 .field-slot {
-  width: 95px;
+  width: 80px;
   height: 120px;
   border: 2px solid rgba(255, 255, 255, 0.3);
   /* 置き場所がわかるように白系の枠を設定 */
@@ -705,9 +705,9 @@ body::before {
 .hand-cards .card {
   position: relative;
   transition: transform 0.2s ease-out, box-shadow 0.2s;
-  width: 85px;
+  width: 80px;
   height: 120px;
-  margin-left: -25px;
+  margin-left: -20px;
   /* カードを重ねる */
 }
 

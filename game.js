@@ -617,29 +617,6 @@ async function useMagicCard(card, player, slotIdx) {
 }
 
 // ===============================
-// フィールド中央の攻撃ボタン処理
-// ===============================
-function triggerFieldAttack() {
-    if (!gs || gs.gameOver) return;
-    if (gs.phase !== PHASE.MAIN && gs.phase !== PHASE.BATTLE) {
-        gs.log('⚠ メインフェイズかバトルフェイズのみ攻撃できます');
-        return;
-    }
-
-    const attacker = gs.currentPlayer;
-    const defender = gs.getOpponent(attacker);
-
-    if (!attacker.fieldMonster[0]) {
-        gs.log('⚠ 攻撃できるモンスターがいません');
-        return;
-    }
-
-    // 相手にモンスターがいれば対象は0、いなければ-1（直接攻撃）
-    const defSlot = defender.fieldMonster[0] ? 0 : -1;
-    declareAttack(0, defSlot);
-}
-
-// ===============================
 // 攻撃宣言 (Async)
 // ===============================
 async function declareAttack(atkSlot, defSlot = -1) {
@@ -1681,9 +1658,13 @@ function _setupOnlineHandlers() {
     });
 
     _socket.on('room_joined', ({ code }) => {
-        // ゲスト:ホストを待機
+        // ゲスト:ホストを待機。実際にはすぐに状態が降ってくるが、画面は切り替える。
         document.getElementById('online-create-section').style.display = 'none';
-        document.getElementById('online-guest-waiting').style.display = 'block';
+        const waitingEl = document.getElementById('online-guest-waiting');
+        if (waitingEl) waitingEl.style.display = 'block';
+
+        // ゲストとしてゲーム開始画面へ遷移
+        document.getElementById('online-modal').style.display = 'none';
         _startAsGuest();
     });
 
@@ -2234,7 +2215,7 @@ function showCardDetail(card, actionCallback = null, actionText = '使用する'
         if (actionCallback) {
             const actionBtn = document.createElement('button');
             actionBtn.className = 'btn btn-large btn-action-main';
-            actionBtn.textContent = isMonster ? '召喚' : '使用';
+            actionBtn.textContent = actionText || (isMonster ? '召喚' : '使用');
             actionBtn.onclick = (e) => {
                 e.stopPropagation();
                 closeCardDetail();
@@ -2281,6 +2262,29 @@ function renderGraveyard() {
 
     const p2Count = document.getElementById('p2-grave-count');
     if (p2Count) p2Count.textContent = gs.player2.graveyard.length;
+
+    // 動的スタイル変更
+    const p1Btn = document.querySelector(`button[onclick="showGraveyard('p1')"]`);
+    if (p1Btn) {
+        if (gs.player1.graveyard.length === 0) {
+            p1Btn.style.opacity = '0.5';
+            p1Btn.style.background = '#333';
+        } else {
+            p1Btn.style.opacity = '1';
+            p1Btn.style.background = 'linear-gradient(135deg, #1a1a2e, #16213e)';
+        }
+    }
+
+    const p2Btn = document.querySelector(`button[onclick="showGraveyard('p2')"]`);
+    if (p2Btn) {
+        if (gs.player2.graveyard.length === 0) {
+            p2Btn.style.opacity = '0.5';
+            p2Btn.style.background = '#333';
+        } else {
+            p2Btn.style.opacity = '1';
+            p2Btn.style.background = 'linear-gradient(135deg, #1a1a2e, #16213e)';
+        }
+    }
 }
 
 function showGraveyard(prefix) {
