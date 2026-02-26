@@ -7,6 +7,14 @@
     <title>HATTORI CLUB CARD GAME ～ハットリ会会長決定戦～</title>
     <meta name="description" content="遊戯王風オリジナルカードゲーム。対戦モードとカード検証モードを搭載。">
     <link rel="stylesheet" href="style.css">
+    <script>
+        window.onerror = function (msg, url, line, col, error) {
+            fetch('/log_error', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ msg: msg, stack: error ? error.stack : '' }) });
+        };
+        window.addEventListener('unhandledrejection', function (event) {
+            fetch('/log_error', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ msg: 'Unhandled Rejection: ' + event.reason, stack: event.reason && event.reason.stack }) });
+        });
+    </script>
 </head>
 
 <body>
@@ -278,6 +286,9 @@
     <script src="cards.js"></script>
     <script src="game.js"></script>
 
+    <script>
+        setTimeout(() => { if (typeof startTestGame === 'function') startTestGame(); }, 1500);
+    </script>
 </body>
 
 </html>

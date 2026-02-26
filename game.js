@@ -1014,36 +1014,46 @@ function renderHand(player) {
         const cardNode = createCardElement(card, idx, true);
         cardsEl.appendChild(cardNode);
     });
-    el.appendChild(cardsEl);
+    // DOM追加は後回し（headerElを先に挿入するため）
 
     const headerEl = document.createElement('div');
     headerEl.className = 'hand-header';
+    headerEl.style.position = 'absolute';
+    headerEl.style.top = '0';
+    headerEl.style.left = '0';
+    headerEl.style.width = '100%';
     headerEl.style.display = 'flex';
-    headerEl.style.justifyContent = 'center';
-    headerEl.style.gap = '10px';
-    headerEl.style.marginBottom = '5px'; // 少し隙間を開ける
+    headerEl.style.justifyContent = 'space-between'; // 左右に散らす
+    headerEl.style.alignItems = 'center';
+    headerEl.style.padding = '0 20px';
+    headerEl.style.pointerEvents = 'none'; // クリック貫通
+    headerEl.style.zIndex = '200';
 
     const toggleBtn = document.createElement('button');
     toggleBtn.className = 'btn-hand-toggle';
-    toggleBtn.style.padding = '4px 12px';
-    toggleBtn.style.borderRadius = '4px';
-    toggleBtn.style.background = 'linear-gradient(135deg, #111, #333)';
+    toggleBtn.style.padding = '6px 16px';
+    toggleBtn.style.borderRadius = '6px';
+    toggleBtn.style.background = 'linear-gradient(135deg, #222, #444)';
     toggleBtn.style.color = 'white';
-    toggleBtn.style.border = '1px solid #555';
+    toggleBtn.style.border = '2px solid #666';
     toggleBtn.style.cursor = 'pointer';
+    toggleBtn.style.fontWeight = 'bold';
+    toggleBtn.style.pointerEvents = 'auto'; // ボタン自体はクリック可能
     toggleBtn.textContent = wasOpen ? '▼ 手札を隠す' : '▲ 手札を見る';
     toggleBtn.onclick = toggleHand;
     headerEl.appendChild(toggleBtn);
 
     const endTurnBtn = document.createElement('button');
     endTurnBtn.className = 'btn-end-turn-header';
-    endTurnBtn.style.padding = '4px 12px';
-    endTurnBtn.style.borderRadius = '4px';
-    endTurnBtn.style.background = 'linear-gradient(135deg, #001a0a, #003311)';
+    endTurnBtn.style.padding = '8px 24px';
+    endTurnBtn.style.borderRadius = '8px';
+    endTurnBtn.style.background = 'linear-gradient(135deg, #003311, #005522)';
     endTurnBtn.style.color = '#00ff88';
-    endTurnBtn.style.border = '1px solid #00ff88';
+    endTurnBtn.style.border = '2px solid #00ff88';
     endTurnBtn.style.cursor = 'pointer';
     endTurnBtn.style.fontWeight = 'bold';
+    endTurnBtn.style.pointerEvents = 'auto';
+    endTurnBtn.style.boxShadow = '0 4px 10px rgba(0,255,136,0.3)';
     endTurnBtn.textContent = '✅ ターン終了';
     endTurnBtn.onclick = () => {
         if (gs && (gs.phase === PHASE.MAIN || gs.phase === PHASE.BATTLE)) {
@@ -1064,8 +1074,9 @@ function renderHand(player) {
 
     headerEl.appendChild(endTurnBtn);
 
-    // ヘッダーを後から追加し、CSS的にも被らないように・背面へ行かないようにする
+    // headerElを先に挿入し、その後にcardsElを挿入（flex-direction: columnにより縦に並ぶ）
     el.appendChild(headerEl);
+    el.appendChild(cardsEl);
 
     if (!wasOpen) el.classList.add('hand-closed');
 }
@@ -1759,7 +1770,7 @@ function _startAsHost() {
     gs.player1.name = 'P1';
     gs.player2.name = 'P2';
     gs._isOnlineHost = true;
-    document.getElementById('mode-badge').textContent = '🌐 オンライン(ホスト)';
+    // document.getElementById('mode-badge').textContent = '🌐 オンライン(ホスト)';
 
     // 先攻後攻ランダム決定
     const first = Math.random() < 0.5;
@@ -1977,10 +1988,16 @@ function _renderAsGuest(state) {
 
         const headerEl = document.createElement('div');
         headerEl.className = 'hand-header';
+        headerEl.style.position = 'absolute';
+        headerEl.style.top = '0';
+        headerEl.style.left = '0';
+        headerEl.style.width = '100%';
         headerEl.style.display = 'flex';
-        headerEl.style.justifyContent = 'center';
-        headerEl.style.gap = '10px';
-        headerEl.style.marginBottom = '5px';
+        headerEl.style.justifyContent = 'space-between';
+        headerEl.style.alignItems = 'center';
+        headerEl.style.padding = '0 20px';
+        headerEl.style.pointerEvents = 'none';
+        headerEl.style.zIndex = '200';
 
         const infoLabel = document.createElement('div');
         infoLabel.style.color = '#fff';
@@ -1991,12 +2008,14 @@ function _renderAsGuest(state) {
 
         const toggleBtn = document.createElement('button');
         toggleBtn.className = 'btn-hand-toggle';
-        toggleBtn.style.padding = '4px 12px';
-        toggleBtn.style.borderRadius = '4px';
-        toggleBtn.style.background = 'linear-gradient(135deg, #111, #333)';
+        toggleBtn.style.padding = '6px 16px';
+        toggleBtn.style.borderRadius = '6px';
+        toggleBtn.style.background = 'linear-gradient(135deg, #222, #444)';
         toggleBtn.style.color = 'white';
-        toggleBtn.style.border = '1px solid #555';
+        toggleBtn.style.border = '2px solid #666';
         toggleBtn.style.cursor = 'pointer';
+        toggleBtn.style.fontWeight = 'bold';
+        toggleBtn.style.pointerEvents = 'auto';
         toggleBtn.textContent = wasOpen ? '▼ 手札を隠す' : '▲ 手札を見る';
         toggleBtn.onclick = toggleHand;
 

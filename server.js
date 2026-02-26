@@ -13,6 +13,16 @@ const PORT = 8080;
 
 // 静的ファイルの配信 (ゲーム本体 HTML, CSS, JS, 画像など)
 app.use(express.static(path.join(__dirname)));
+app.use(express.json());
+
+// エラー収集エンドポイント（デバッグ用）
+app.post('/log_error', (req, res) => {
+    console.error('\n\n--- SERVER CAUGHT BROWSER ERROR ---');
+    console.error('Message:', req.body.msg);
+    if (req.body.stack) console.error('Stack:', req.body.stack);
+    console.error('-----------------------------------\n\n');
+    res.sendStatus(200);
+});
 
 // ルーム管理
 // roomCode => { hostId: socketId, guestId: socketId | null, state: any }
