@@ -205,9 +205,9 @@ class GameState {
     }
 
     resetTempEffects(player) {
-        if (player.fieldMonster) {
-            player.fieldMonster.tempAtkBonus = 0;
-            player.fieldMonster.tempAtkPenalty = 0;
+        if (player.fieldMonster && player.fieldMonster[0]) {
+            player.fieldMonster[0].tempAtkBonus = 0;
+            player.fieldMonster[0].tempAtkPenalty = 0;
         }
         // 装備カード以外はターン終了時に破壊される魔法（HATTORI CLUBとか）
         // ただし現状の魔法は即時効果or装備or永続なので、ここでfieldMagicを破壊するのは装備カードまで破壊してしまうリスクがある。
@@ -476,10 +476,10 @@ async function endTurn(isAuto = false) {
     gs.resetTempEffects(gs.currentPlayer);
 
     // 相手フィールドのターン系デバフもリセット
-    if (gs.opponentPlayer.fieldMonster) {
-        gs.opponentPlayer.fieldMonster.tempAtkPenalty = 0;
+    if (gs.opponentPlayer.fieldMonster && gs.opponentPlayer.fieldMonster[0]) {
+        gs.opponentPlayer.fieldMonster[0].tempAtkPenalty = 0;
         // 柳の手汗など、効果無効化のリセット
-        gs.opponentPlayer.fieldMonster.effectNegated = false;
+        gs.opponentPlayer.fieldMonster[0].effectNegated = false;
     }
 
     // 次のプレイヤーへ
@@ -995,9 +995,12 @@ function renderPhase(phase) {
     const el = document.getElementById('phase-display');
     if (el) el.textContent = phase;
 
-    // フェイズ移行演出
-    if (phase === PHASE.MAIN || phase === PHASE.BATTLE || phase === PHASE.END) {
-        showPhaseIndicator(phase);
+    // フェイズ移行演出 (ユーザー要望によりBATTLE PHASEのみ、かつ移行時1回のみ表示)
+    if (gs && gs._lastShownPhase !== phase) {
+        gs._lastShownPhase = phase;
+        if (phase === PHASE.BATTLE) {
+            showPhaseIndicator(phase);
+        }
     }
 }
 

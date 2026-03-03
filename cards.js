@@ -128,10 +128,10 @@ const MONSTER_CARDS = [
     onPlay: (gs, owner) => {
       const hasKamide = owner.graveyard.some(c => c.id === CARD_ID.KAMIDE || c.id === CARD_ID.AI_KAMIDE);
       if (hasKamide) {
-        owner.fieldMonster.tempAtkBonus = (owner.fieldMonster.tempAtkBonus || 0) + 500;
+        owner.fieldMonster[0].tempAtkBonus = (owner.fieldMonster[0].tempAtkBonus || 0) + 500;
         gs.log(`【${owner.name}】墓地に上出 瑠星がいるため堀江 俊郎のATK+500！`);
       }
-      gs.log(`【${owner.name}】堀江 俊郎を召喚！(ATK:${1300 + (owner.fieldMonster?.tempAtkBonus || 0)})`);
+      gs.log(`【${owner.name}】堀江 俊郎を召喚！(ATK:${1300 + (owner.fieldMonster[0]?.tempAtkBonus || 0)})`);
     },
     onDestroy: null
   },
@@ -587,10 +587,10 @@ const MONSTER_CARDS = [
     onPlay: (gs, owner) => {
       const hasHorie = owner.graveyard.some(c => c.id === CARD_ID.HORIE || c.id === CARD_ID.JOSOU_HORIE);
       if (hasHorie) {
-        owner.fieldMonster.tempAtkBonus = (owner.fieldMonster.tempAtkBonus || 0) + 1000;
+        owner.fieldMonster[0].tempAtkBonus = (owner.fieldMonster[0].tempAtkBonus || 0) + 1000;
         gs.log(`【${owner.name}】墓地に堀江 俊郎がいるため愛を知る男のATK+1000！`);
       }
-      gs.log(`【${owner.name}】愛を知る男 上出 瑠星召喚！(ATK:${1900 + (owner.fieldMonster?.tempAtkBonus || 0)})`);
+      gs.log(`【${owner.name}】愛を知る男 上出 瑠星召喚！(ATK:${1900 + (owner.fieldMonster[0]?.tempAtkBonus || 0)})`);
     },
     onDestroy: null
   },
@@ -740,7 +740,7 @@ const MAGIC_CARDS = [
     onPlay: (gs, owner) => {
       if (owner.fieldMonster) {
         owner.fieldMonster.equipped = CARD_ID.YANI_JACKET;
-        owner.fieldMonster.tempAtkBonus = (owner.fieldMonster.tempAtkBonus || 0) + 300;
+        owner.fieldMonster[0].tempAtkBonus = (owner.fieldMonster[0].tempAtkBonus || 0) + 300;
         gs.log(`【${owner.name}】VISIONヤニくさいジャケットを装備！ ${owner.fieldMonster.name}のATK+300`);
       }
       return { dontGraveyard: true };
@@ -777,7 +777,7 @@ const MAGIC_CARDS = [
     onPlay: (gs, owner) => {
       const opponent = gs.getOpponent(owner);
       if (opponent.fieldMonster) {
-        opponent.fieldMonster.tempAtkPenalty = (opponent.fieldMonster.tempAtkPenalty || 0) + 300;
+        opponent.fieldMonster[0].tempAtkPenalty = (opponent.fieldMonster[0].tempAtkPenalty || 0) + 300;
         gs.log(`【${owner.name}】黄ばんだ公園！相手モンスターのATK-300（このターン）`);
       } else {
         gs.log(`【${owner.name}】黄ばんだ公園を発動！（相手フィールドにモンスターなし）`);
@@ -886,7 +886,7 @@ const MAGIC_CARDS = [
     canUse: (gs, player) => true,
     onPlay: (gs, owner) => {
       if (owner.fieldMonster) {
-        owner.fieldMonster.tempAtkBonus = (owner.fieldMonster.tempAtkBonus || 0) + 500;
+        owner.fieldMonster[0].tempAtkBonus = (owner.fieldMonster[0].tempAtkBonus || 0) + 500;
         gs.log(`【${owner.name}】HATTORI CLUB！自分モンスターATK+500（このターン）`);
       } else {
         gs.log(`【${owner.name}】HATTORI CLUB発動！（フィールドにモンスターなし）`);
@@ -1018,10 +1018,10 @@ const MAGIC_CARDS = [
       [p1, p2].forEach(p => {
         if (p.fieldMonster) {
           if (p.fieldMonster.id === CARD_ID.HORIE || p.fieldMonster.id === CARD_ID.JOSOU_HORIE) {
-            p.fieldMonster.tempAtkBonus = (p.fieldMonster.tempAtkBonus || 0) + 300;
+            p.fieldMonster[0].tempAtkBonus = (p.fieldMonster[0].tempAtkBonus || 0) + 300;
             gs.log(`→ ${p.fieldMonster.name}のATK+300！`);
           } else {
-            p.fieldMonster.tempAtkPenalty = (p.fieldMonster.tempAtkPenalty || 0) + 300;
+            p.fieldMonster[0].tempAtkPenalty = (p.fieldMonster[0].tempAtkPenalty || 0) + 300;
             gs.log(`→ ${p.fieldMonster.name}のATK-300！`);
           }
         }
@@ -1130,7 +1130,7 @@ const MAGIC_CARDS = [
     canUse: (gs, player) => player.fieldMonster &&
       (player.fieldMonster.id === CARD_ID.KAMIDE || player.fieldMonster.id === CARD_ID.AI_KAMIDE),
     onPlay: (gs, owner) => {
-      owner.fieldMonster.tempAtkBonus = (owner.fieldMonster.tempAtkBonus || 0) + 1000;
+      owner.fieldMonster[0].tempAtkBonus = (owner.fieldMonster[0].tempAtkBonus || 0) + 1000;
       // 次のターンに-1000する予約フラグを持たせる（game.jsで処理）
       owner.fieldMonster.nextTurnAtkDown = (owner.fieldMonster.nextTurnAtkDown || 0) + 1000;
       gs.log(`【${owner.name}】バチイケになった俺！上出 瑠星ATK+1000！(次ターン反動あり)`);
@@ -1322,3 +1322,4 @@ function getRandomCards(n) {
   for (let i = 0; i < n; i++) cards.push(getRandomCard());
   return cards;
 }
+
