@@ -1667,6 +1667,60 @@ body::before {
   }
 }
 
+/* ===== フェイズ移行インジケータ ===== */
+.phase-indicator-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 10000;
+}
+
+.phase-indicator-text {
+  font-family: 'Space Grotesk', 'Noto Sans JP', sans-serif;
+  font-size: clamp(3rem, 12vw, 8rem);
+  font-weight: 900;
+  color: #fff;
+  text-shadow: 0 0 30px #ffaa00, 0 0 60px #ff4400;
+  opacity: 0;
+  transform: scale(0.5);
+  animation: phase-indicator-anim 1.5s ease-out forwards;
+}
+
+@keyframes phase-indicator-anim {
+  0% {
+    opacity: 0;
+    transform: scale(0.5) translateY(20px);
+    filter: blur(5px);
+  }
+
+  20% {
+    opacity: 1;
+    transform: scale(1.1) translateY(0);
+    filter: blur(0);
+  }
+
+  30% {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0);
+  }
+
+  80% {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(1.2);
+    filter: blur(10px);
+  }
+}
+
 .win-title {
   font-family: 'Cinzel', serif;
   font-size: clamp(3rem, 10vw, 6rem);

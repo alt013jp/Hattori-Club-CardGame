@@ -525,12 +525,13 @@ async function useCard(cardIndex, isAuto = false) {
     player.hand.splice(cardIndex, 1);
 
     if (card.type === CARD_TYPE.MONSTER) {
-        // MONSTER：空き枠を探す。空きがなければプレイ不能だが、事前の canUse 等で弾かれている想定
-        const slotIdx = getFirstEmptySlot(player.fieldMonster);
+        // MONSTER：空き枠を探す。空きがなければ（1枠ルールの場合は）既存のものを破壊して上書き召喚
+        let slotIdx = getFirstEmptySlot(player.fieldMonster);
         if (slotIdx === -1) {
-            gs.log('⚠ フィールド(モンスター)に空きがありません！');
-            player.hand.splice(cardIndex, 0, card); // 手札に戻す
-            return;
+            // スロットが全て埋まっている場合（通常は1枠なのでインデックス0）
+            slotIdx = 0;
+            gs.log(`【退場】${player.name} の ${player.fieldMonster[slotIdx].name} が墓地へ送られ、新たなモンスターが召喚されます`);
+            destroyMonster(player, slotIdx);
         }
         await useMonsterCard(card, player, slotIdx);
         gs.monsterUsedThisTurn = true; // モンスターはこのターン使用済み
@@ -993,6 +994,27 @@ function renderPlayerInfo(player, prefix) {
 function renderPhase(phase) {
     const el = document.getElementById('phase-display');
     if (el) el.textContent = phase;
+
+    // フェイズ移行演出
+    if (phase === PHASE.MAIN || phase === PHASE.BATTLE || phase === PHASE.END) {
+        showPhaseIndicator(phase);
+    }
+}
+
+function showPhaseIndicator(msg) {
+    const el = document.getElementById('phase-indicator-overlay');
+    const txt = document.getElementById('phase-indicator-text');
+    if (!el || !txt) return;
+
+    txt.textContent = msg;
+    el.style.display = 'flex';
+    txt.style.animation = 'none';
+    void txt.offsetWidth; // reflow
+    txt.style.animation = 'phase-indicator-anim 1.5s ease-out forwards';
+
+    setTimeout(() => {
+        el.style.display = 'none';
+    }, 1500);
 }
 
 function showTurnIndicator(msg) {
