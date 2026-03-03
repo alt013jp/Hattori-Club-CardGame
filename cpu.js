@@ -18,7 +18,7 @@ async function processCPUTurn(gs) {
             renderPhase(gs.phase);
         } else if (gs.phase === PHASE.MAIN) {
             const action = chooseMainPhaseAction(gs);
-            if (action) {
+            if (action && action.type !== 'END_PHASE') {
                 await evaluateAndExecuteAction(gs, action);
             } else {
                 // アクションがない場合はバトルフェイズへ
@@ -27,10 +27,10 @@ async function processCPUTurn(gs) {
             }
         } else if (gs.phase === PHASE.BATTLE) {
             const action = chooseBattlePhaseAction(gs);
-            if (action) {
+            if (action && action.type !== 'END_PHASE') {
                 await evaluateAndExecuteAction(gs, action);
             } else {
-                // アクションがない場合はエンドターンへ
+                // アクションがない、またはフェイズ終了の場合はエンドターンへ
                 await endTurn(true);
                 break; // ターン終了なのでループを抜ける
             }

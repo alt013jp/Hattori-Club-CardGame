@@ -601,6 +601,11 @@ async function useMonsterCard(card, player, slotIdx) {
 async function useMagicCard(card, player, slotIdx) {
     player.fieldMagic[slotIdx] = card;
     gs.log(`【発動】${player.name} が「${card.name}」を使用しました！`);
+
+    // 発動した魔法カードを盤面に表示して一時待機（視覚化）
+    renderAll();
+    await new Promise(resolve => setTimeout(resolve, 800));
+
     // 非同期onPlay対応
     const result = card.onPlay ? await card.onPlay(gs, player) : null;
 
