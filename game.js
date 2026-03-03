@@ -455,6 +455,14 @@ async function endTurn(isAuto = false) {
     if (!gs || gs.gameOver) return;
     if (!isAuto && gs.mode === MODE.CPU && !gs.currentPlayer.isHuman) return;
 
+    // コルティレの持続終了（自分のエンドフェイズ時に、自分のフラグを解除。もし持続が「相手のエンドフェイズまで」なら、相手のフラグを解除する）
+    // 要望: 「相手のエンドフェイズまで効果が持続」→ つまり相手がターンを終了する時に解除
+    const opp = gs.getOpponent(gs.currentPlayer);
+    if (opp.cortileActive) {
+        opp.cortileActive = false;
+        gs.log(`【${opp.name}】着払いの名所 コルティレの効果が終了しました。`);
+    }
+
     gs.phase = PHASE.END;
     renderPhase(gs.phase);
     gs.log(`${gs.currentPlayer.name} のターン終了`);
@@ -605,9 +613,16 @@ async function useMagicCard(card, player, slotIdx) {
         return;
     }
 
-    // STARBUCKS: 墓地選択 UI
+    // STARBUCKS: 墓地選択 UI or CPU Auto Select
     if (result && result.needsGraveyardSelect) {
-        showGraveyardSelect(result.player);
+        if (!player.isHuman && player.graveyard.length > 0) {
+            // CPUの場合は自動で先頭のカード（またはランダム）を選択して回収
+            const selected = player.graveyard.splice(0, 1)[0];
+            player.hand.push(selected);
+            gs.log(`🤖 CPU Action: STAR BUCKSの効果で墓地の${selected.name}を回収しました`);
+        } else {
+            showGraveyardSelect(result.player);
+        }
     }
 
     // 装備カード以外は即墓地へ
@@ -702,13 +717,20 @@ async function declareAttack(atkSlot, defSlot = -1, isAuto = false) {
         gs.log(`【${defender.name}】二割引の生麺適用！ダメージ20%軽減`);
     }
 
+    let attackerDmgTarget = attacker;
+    let defenderDmgTarget = defender;
+
+    // 着払いの名所 コルティレ (CORTILE)
+    if (attacker.cortileActive) attackerDmgTarget = defender;
+    if (defender.cortileActive) defenderDmgTarget = attacker;
+
     // 直接攻撃
     const isDirectAttack = !defMonster;
     if (isDirectAttack) {
         const dmg = Math.floor(atkAtk * damageMultiplier);
-        defender.lp = Math.max(0, defender.lp - dmg);
-        showFloatingDamage(dmg, defender === gs.player1, true);
-        gs.log(`${defender.name}に${dmg}ダメージ！(LP:${defender.lp})`);
+        defenderDmgTarget.lp = Math.max(0, defenderDmgTarget.lp - dmg);
+        showFloatingDamage(dmg, defenderDmgTarget === gs.player1, true);
+        gs.log(`${defenderDmgTarget.name}に${dmg}ダメージ！(LP:${defenderDmgTarget.lp})`);
 
         // CURTAIN BREAKER 追加ダメージ
         if (atkMonster.id === CARD_ID.CURTAIN_HASHIMOTO && atkMonster.onBattleWin) {
@@ -729,9 +751,9 @@ async function declareAttack(atkSlot, defSlot = -1, isAuto = false) {
             const dmg = Math.floor(diff * damageMultiplier);
 
             gs.log(`${atkMonster.name}が勝利！差分${dmg}ダメージ`);
-            defender.lp = Math.max(0, defender.lp - dmg);
-            showFloatingDamage(dmg, defender === gs.player1, true);
-            gs.log(`${defender.name} LP:${defender.lp}`);
+            defenderDmgTarget.lp = Math.max(0, defenderDmgTarget.lp - dmg);
+            showFloatingDamage(dmg, defenderDmgTarget === gs.player1, true);
+            gs.log(`${defenderDmgTarget.name} LP:${defenderDmgTarget.lp}`);
 
             if (defMonster.indestructible && !defMonster.effectNegated) {
                 gs.log(`${defMonster.name}は戦闘では破壊されない！`);
@@ -740,6 +762,9 @@ async function declareAttack(atkSlot, defSlot = -1, isAuto = false) {
                     atkMonster.permanentAtkBonus = (atkMonster.permanentAtkBonus || 0) + 600;
                     gs.log(`道下 政功 ATK+600スタック！現在ATK:${attacker.getEffectiveAtk(gs, atkSlot)}`);
                 }
+            } else if (defMonster.battleResist && defMonster.battleResist > 0) {
+                defMonster.battleResist -= 1;
+                gs.log(`${defMonster.name}は戦闘ダメージを耐えた！(残り耐性: ${defMonster.battleResist}回)`);
             } else {
                 // 道下 政功：相手破壊成功でATK+600
                 if (atkMonster.id === CARD_ID.MICHISHITA) {
@@ -757,9 +782,9 @@ async function declareAttack(atkSlot, defSlot = -1, isAuto = false) {
             const diff = defAtk - atkAtk;
             gs.log(`${defMonster.name}が防御勝利！差分${diff}ダメージ`);
             // 攻撃側への反動ダメージには防御側（受け手でない）の二割引は適用されない
-            attacker.lp = Math.max(0, attacker.lp - diff);
-            showFloatingDamage(diff, attacker === gs.player1, true);
-            gs.log(`${attacker.name} LP:${attacker.lp}`);
+            attackerDmgTarget.lp = Math.max(0, attackerDmgTarget.lp - diff);
+            showFloatingDamage(diff, attackerDmgTarget === gs.player1, true);
+            gs.log(`${attackerDmgTarget.name} LP:${attackerDmgTarget.lp}`);
 
             if (atkMonster.indestructible && !atkMonster.effectNegated) {
                 gs.log(`${atkMonster.name}は戦闘では破壊されない！`);
@@ -768,6 +793,9 @@ async function declareAttack(atkSlot, defSlot = -1, isAuto = false) {
                     defMonster.permanentAtkBonus = (defMonster.permanentAtkBonus || 0) + 600;
                     gs.log(`道下 政功 ATK+600スタック！現在ATK:${defender.getEffectiveAtk(gs, defSlot)}`);
                 }
+            } else if (atkMonster.battleResist && atkMonster.battleResist > 0) {
+                atkMonster.battleResist -= 1;
+                gs.log(`${atkMonster.name}は戦闘ダメージを耐えた！(残り耐性: ${atkMonster.battleResist}回)`);
             } else {
                 // 道下 政功（防御側）：相手破壊でATK+600
                 if (defMonster.id === CARD_ID.MICHISHITA) {

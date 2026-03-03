@@ -64,6 +64,14 @@ const CARD_ID = {
   T_SHIRT_MICHISHITA: 't_shirt_michishita',
   T_SHIRT_HORIE: 't_shirt_horie',
   RO_KUN: 'ro_kun',
+  // 追加リクエスト分 (Phase 30)
+  ZOO_KATSUNORI: 'zoo_katsunori',
+  SHINKANSEN: 'shinkansen',
+  HOLY_NIGHT_CLERK: 'holy_night_clerk',
+  HUSTLER: 'hustler',
+  VISION_THIEF: 'vision_thief',
+  FIREWORKS: 'fireworks',
+  CORTILE: 'cortile',
   // 追加リクエスト分 (Phase 6)
   NINPU: 'ninpu',
   KAIJUU: 'kaijuu',
@@ -254,6 +262,91 @@ const MONSTER_CARDS = [
     canUse: (gs, player) => true,
     onPlay: (gs, owner) => {
       gs.log(`【${owner.name}】ロボットを召喚！(ATK:1200)`);
+    },
+    onDestroy: null
+  },
+  {
+    id: CARD_ID.ZOO_KATSUNORI,
+    name: '動物園展示物 カツノリくん',
+    type: CARD_TYPE.MONSTER,
+    atk: 1900,
+    effect: 'このカードは戦闘を一度終えると自動的に破壊される。',
+    color: '#a0522d',
+    emoji: '🐰',
+    imageFile: '',
+    oneTimeAttacker: true,
+    canUse: (gs, player) => true,
+    onPlay: (gs, owner) => {
+      gs.log(`【${owner.name}】動物園展示物 カツノリくんを召喚！(ATK:1900)`);
+    },
+    onDestroy: null
+  },
+  {
+    id: CARD_ID.SHINKANSEN,
+    name: '新幹線',
+    type: CARD_TYPE.MONSTER,
+    atk: 1200,
+    effect: 'このカードは相手モンスターとの戦闘では2回まで破壊されない。（魔法カードでは破壊される）',
+    color: '#ffffff',
+    emoji: '🚄',
+    imageFile: '',
+    battleResist: 2, // 戦闘破壊耐性カウンタ（game.jsで処理）
+    canUse: (gs, player) => true,
+    onPlay: (gs, owner) => {
+      gs.log(`【${owner.name}】新幹線を召喚！(ATK:1200)`);
+    },
+    onDestroy: null
+  },
+  {
+    id: CARD_ID.HOLY_NIGHT_CLERK,
+    name: '聖夜のコンビニ店員',
+    type: CARD_TYPE.MONSTER,
+    atk: 1400,
+    effect: 'なし',
+    color: '#00ced1',
+    emoji: '🏪',
+    imageFile: '',
+    canUse: (gs, player) => true,
+    onPlay: (gs, owner) => {
+      gs.log(`【${owner.name}】聖夜のコンビニ店員を召喚！(ATK:1400)`);
+    },
+    onDestroy: null
+  },
+  {
+    id: CARD_ID.HUSTLER,
+    name: 'ハットリ会の足 ハスラー',
+    type: CARD_TYPE.MONSTER,
+    atk: 800,
+    effect: 'このカードが召喚された場合、ランダムに2枚カードを手札に加える。',
+    color: '#dc143c',
+    emoji: '🚗',
+    imageFile: '',
+    canUse: (gs, player) => true,
+    onPlay: (gs, owner) => {
+      gs.log(`【${owner.name}】ハットリ会の足 ハスラーを召喚！効果でデッキから2枚ドロー！`);
+      gs.drawCard(owner);
+      gs.drawCard(owner);
+    },
+    onDestroy: null
+  },
+  {
+    id: CARD_ID.VISION_THIEF,
+    name: 'ヴィジョンを盗みし者',
+    type: CARD_TYPE.MONSTER,
+    atk: 1000,
+    effect: 'このカードがモンスターカードゾーンに出ているときに、自分のターンに1回のみ発動可能、相手の手札を１枚ランダムに選び、それを自分の手札に加える。',
+    color: '#8a2be2',
+    emoji: '👁️',
+    imageFile: '',
+    canUse: (gs, player) => true,
+    onPlay: (gs, owner) => {
+      gs.log(`【${owner.name}】ヴィジョンを盗みし者を召喚！(ATK:1000)`);
+      // 起動効果なので、カードの横にボタンを置くか、毎ターン自動処理（onTurnStart等が必要）。
+      // 簡単のため、今回は実装計画通り game.js の「カード詳細ダイアログ」からの起動などに組み込むためフラグを持たせる。
+      if (owner.fieldMonster) {
+        owner.fieldMonster.canStealHand = true;
+        owner.fieldMonster.hasStolenThisTurn = false;
+      }
     },
     onDestroy: null
   },
@@ -767,11 +860,19 @@ const MAGIC_CARDS = [
         }
       });
 
-      showCardSelectUI(uniqueTargets, (selectedItem) => {
+      if (!owner.isHuman && uniqueTargets.length > 0) {
+        // CPUは自動で先頭の候補を取得
+        const selectedItem = uniqueTargets[0];
         owner.hand.push(Object.assign({}, selectedItem));
-        gs.log(`【${owner.name}】氷見高校：${selectedItem.name}を手札に加えた`);
+        gs.log(`🤖 CPU Action: 氷見高校の効果で ${selectedItem.name} を手札に加えました`);
         renderAll();
-      }, "手札に加えるカードを選択");
+      } else {
+        showCardSelectUI(uniqueTargets, (selectedItem) => {
+          owner.hand.push(Object.assign({}, selectedItem));
+          gs.log(`【${owner.name}】氷見高校：${selectedItem.name}を手札に加えた`);
+          renderAll();
+        }, "手札に加えるカードを選択");
+      }
     }
   },
   {
@@ -836,6 +937,37 @@ const MAGIC_CARDS = [
       gs.log(`?? 特殊勝利！ ??`);
       // 特殊勝利処理（game.jsのtriggerWinEffectでエフェクト呼び出し、勝敗決定）
       return { win: true, type: 'kimokusa' };
+    }
+  },
+  {
+    id: CARD_ID.FIREWORKS,
+    name: '川北の花火に',
+    type: CARD_TYPE.MAGIC,
+    effect: '自分フィールドのモンスターカードの攻撃力を500アップさせる。ただし、この効果を受けたモンスターは１度戦闘を行うと自動的に破壊される。(相手に攻撃され、破壊されなかった場合でも自動的に破壊。）',
+    color: '#ff4500',
+    emoji: '🎆',
+    imageFile: '',
+    canUse: (gs, player) => !!player.fieldMonster[0], // モンスターがいなければ使用不可
+    onPlay: (gs, owner) => {
+      if (owner.fieldMonster[0]) {
+        owner.fieldMonster[0].permanentAtkBonus = (owner.fieldMonster[0].permanentAtkBonus || 0) + 500;
+        owner.fieldMonster[0].oneTimeAttacker = true; // 戦闘後自壊フラグを付与
+        gs.log(`【${owner.name}】川北の花火に！自モンスターのATKを500アップさせ、戦闘後自壊デメリットを付与しました。`);
+      }
+    }
+  },
+  {
+    id: CARD_ID.CORTILE,
+    name: '着払いの名所 コルティレ',
+    type: CARD_TYPE.MAGIC,
+    effect: 'このカードを発動したターンのみ、自分自身が受けるダメージは相手プレイヤーが代わりに受ける。（相手のエンドフェイズまで効果が持続。相手フィールドにモンスターカードが存在していても、それを無視してプレイヤーに直接ダメージを与える処理。）',
+    color: '#8b4513',
+    emoji: '📦',
+    imageFile: '',
+    canUse: (gs, player) => true,
+    onPlay: (gs, owner) => {
+      owner.cortileActive = true;
+      gs.log(`【${owner.name}】着払いの名所 コルティレ発動！本ターン中の全ダメージを相手が肩代わりします！`);
     }
   },
   {
