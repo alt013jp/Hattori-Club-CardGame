@@ -649,6 +649,13 @@ async function useMagicCard(card, player, slotIdx) {
         }
     }
 
+    // デバッグ選択 UI
+    if (result && result.needsDebugSelect) {
+        if (player.isHuman) {
+            showDebugSelectUI(player);
+        }
+    }
+
     // 装備カード以外は即墓地へ
     if (!result || !result.dontGraveyard) {
         player.fieldMagic[slotIdx] = null;
@@ -1541,6 +1548,43 @@ function showGraveyardSelect(player, result = null) {
         list.appendChild(item);
     });
     modal.querySelector('#gy-cancel-btn').onclick = () => modal.remove();
+}
+
+// ===============================
+// デバッグドロー選択UI
+// ===============================
+function showDebugSelectUI(player) {
+    if (!player) return;
+
+    const modal = document.createElement('div');
+    modal.className = 'graveyard-select-modal';
+    modal.style.zIndex = '9999';
+    modal.innerHTML = `
+      <div class="graveyard-select-box" style="max-height: 80vh; overflow-y: auto;">
+        <div class="graveyard-select-title">⚙️ デバッグ：カードを取得</div>
+        <div class="graveyard-select-list" id="debug-select-list"></div>
+        <button class="btn-gs-cancel" id="debug-cancel-btn">キャンセル</button>
+      </div>
+    `;
+    document.body.appendChild(modal);
+
+    const list = modal.querySelector('#debug-select-list');
+
+    // 全カードリスト ALL_CARDS から選ばせる (cards.jsのGLOBAL変数を利用)
+    ALL_CARDS.forEach((card) => {
+        const item = document.createElement('div');
+        item.className = 'gy-select-item';
+        item.innerHTML = `<span class="gy-item-emoji">${card.emoji || '🃏'}</span> ${card.name}`;
+        item.onclick = () => {
+            // 新しいカードのインスタンスを作成して手札に加える
+            player.hand.push(Object.assign({}, card));
+            gs.log(`【デバッグ】「${card.name}」を手札に加えました！`);
+            modal.remove();
+            renderAll();
+        };
+        list.appendChild(item);
+    });
+    modal.querySelector('#debug-cancel-btn').onclick = () => modal.remove();
 }
 
 // ===============================

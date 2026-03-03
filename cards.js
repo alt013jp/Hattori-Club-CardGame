@@ -57,6 +57,7 @@ const CARD_ID = {
   NIWARIBIKI: 'niwaribiki', // 新規
   BATCHIIKE: 'batchiike', // 新規
   YANAGI_HAND: 'yanagi_hand', // 新規
+  DEBUG_DRAW: 'debug_draw', // デバッグ用
   // 追加リクエスト分
   TAKAMORI_MEDIA: 'takamori_media',
   ROBOT_ARMSPIN: 'robot_armspin',
@@ -832,10 +833,12 @@ const MAGIC_CARDS = [
     onPlay: (gs, owner) => {
       if (owner.fieldMonster) {
         owner.fieldMonster.equipped = CARD_ID.YANI_JACKET;
-        owner.fieldMonster[0].tempAtkBonus = (owner.fieldMonster[0].tempAtkBonus || 0) + 300;
-        gs.log(`【${owner.name}】VISIONヤニくさいジャケットを装備！ ${owner.fieldMonster.name}のATK+300`);
+        // The equipment state is temporary just for ATK effect, immediately destroyed
+        if (owner.fieldMonster[0]) {
+          owner.fieldMonster[0].tempAtkBonus = (owner.fieldMonster[0].tempAtkBonus || 0) + 300;
+        }
+        gs.log(`【${owner.name}】VISIONヤニくさいジャケットを装備！ ${owner.fieldMonster[0]?.name || ''}のATK+300`);
       }
-      return { dontGraveyard: true };
     }
   },
   {
@@ -1434,6 +1437,21 @@ const MAGIC_CARDS = [
         gs.log(`【${owner.name}】破壊されたカップ麺！手札から「${discarded.name}」を捨てた！`);
       }
     }
+  },
+  // ===== デバッグ用 =====
+  {
+    id: CARD_ID.DEBUG_DRAW,
+    name: 'デバッグドロー',
+    type: CARD_TYPE.MAGIC,
+    effect: '任意のカードを1枚デッキから手札に加える（カード検証モード専用）',
+    color: '#000000',
+    emoji: '⚙️',
+    imageFile: '',
+    canUse: (gs, player) => true,
+    onPlay: (gs, owner) => {
+      gs.log(`【${owner.name}】デバッグドローを発動！好きなカードを手札に加えます`);
+      return { needsDebugSelect: true, player: owner };
+    }
   }
 ];
 
@@ -1443,14 +1461,20 @@ const ALL_CARDS = [...MONSTER_CARDS, ...MAGIC_CARDS];
 // 重み付き抽選（進化カードは約10ドローに1枚　weight=0.1）
 // 新規カードが増えたので調整不要。
 function getRandomCard() {
-  const weights = ALL_CARDS.map(c => c.evolved ? 0.1 : 1.0);
+  if (typeof gs !== 'undefined' && gs && gs.mode === 'test') { // gs.mode === MODE.TEST
+    const debugCard = ALL_CARDS.find(c => c.id === CARD_ID.DEBUG_DRAW);
+    if (debugCard) return Object.assign({}, debugCard);
+  }
+
+  const validCards = ALL_CARDS.filter(c => c.id !== CARD_ID.DEBUG_DRAW);
+  const weights = validCards.map(c => c.evolved ? 0.1 : 1.0);
   const total = weights.reduce((a, b) => a + b, 0);
   let rand = Math.random() * total;
-  for (let i = 0; i < ALL_CARDS.length; i++) {
+  for (let i = 0; i < validCards.length; i++) {
     rand -= weights[i];
-    if (rand <= 0) return Object.assign({}, ALL_CARDS[i]);
+    if (rand <= 0) return Object.assign({}, validCards[i]);
   }
-  return Object.assign({}, ALL_CARDS[ALL_CARDS.length - 1]);
+  return Object.assign({}, validCards[validCards.length - 1]);
 }
 
 function getRandomCards(n) {
