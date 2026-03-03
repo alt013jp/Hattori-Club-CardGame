@@ -14,7 +14,7 @@ const PHASE = {
 const MODE = {
     NORMAL: 'normal',
     TEST: 'test',
-    LOCAL_PVP: 'local_pvp'
+    CPU: 'cpu'
 };
 
 // ===============================
@@ -70,7 +70,10 @@ class GameState {
     constructor(mode = MODE.NORMAL) {
         this.mode = mode;
         this.player1 = new Player('プレイヤー1', true);
-        this.player2 = new Player(mode === MODE.TEST ? '仮想相手' : 'プレイヤー2', mode !== MODE.TEST);
+        this.player2 = new Player(
+            mode === MODE.TEST ? '仮想相手' : (mode === MODE.CPU ? 'CPU (NORMAL)' : 'プレイヤー2'),
+            mode !== MODE.TEST && mode !== MODE.CPU
+        );
         this.currentPlayer = null;
         this.opponentPlayer = null;
         this.phase = PHASE.DRAW;
@@ -264,14 +267,14 @@ function startTestGame() {
     initGame(MODE.TEST);
 }
 
-function startLocalGame() {
+function startCPUGame() {
     document.getElementById('title-screen').style.display = 'none';
     document.getElementById('game-screen').style.display = 'flex';
     document.getElementById('gameover-overlay').style.display = 'none';
     clearLog();
-    // ローカルPVPは開始時はP1から
+    // CPU戦はプレイヤーがP1、CPUがP2
     updateLayoutDirection(true);
-    initGame(MODE.LOCAL_PVP);
+    initGame(MODE.CPU);
 }
 
 function goToTitle() {
@@ -436,13 +439,21 @@ async function doStartTurn() {
     gs.phase = PHASE.MAIN;
     renderPhase(gs.phase);
     renderAll();
+
+    // CPUのターンの場合、自動処理を開始
+    if (gs.mode === MODE.CPU && !gs.currentPlayer.isHuman) {
+        if (typeof processCPUTurn === 'function') {
+            processCPUTurn(gs);
+        }
+    }
 }
 
 // ===============================
 // ターン終了 (Async)
 // ===============================
-async function endTurn() {
+async function endTurn(isAuto = false) {
     if (!gs || gs.gameOver) return;
+    if (!isAuto && gs.mode === MODE.CPU && !gs.currentPlayer.isHuman) return;
 
     gs.phase = PHASE.END;
     renderPhase(gs.phase);
@@ -469,26 +480,17 @@ async function endTurn() {
     gs.opponentPlayer = prev;
     gs.turnCount++;
 
-    if (gs.mode === MODE.LOCAL_PVP) {
-        // ローカル対戦：手札を見せないようにオーバーレイを表示
-        // スマホ向かい合わせのために、現在ターンプレイヤーを手前（下）にする
-        updateLayoutDirection(gs.currentPlayer === gs.player1);
-
-        // 手札エリアを一時的にクリア（renderAllで再描画されるまで）
-        const handEl = document.getElementById('hand-area');
-        if (handEl) handEl.innerHTML = '';
-        showTurnOverlay();
-    } else {
-        renderAll();
-        startTurn();
-    }
+    // CPUモードやNORMAL/TESTモードはそのまま進行
+    renderAll();
+    startTurn();
 }
 
 // ===============================
 // カード使用処理 (Async)
 // ===============================
-async function useCard(cardIndex) {
+async function useCard(cardIndex, isAuto = false) {
     if (!gs || gs.gameOver) return;
+    if (!isAuto && gs.mode === MODE.CPU && !gs.currentPlayer.isHuman) return;
     if (gs._isOnlineHost && gs.currentPlayer !== gs.player1) return;
     if (gs.phase !== PHASE.MAIN) {
         gs.log('⚠ メインフェイズ以外はカードを使用できません');
@@ -619,8 +621,9 @@ async function useMagicCard(card, player, slotIdx) {
 // ===============================
 // 攻撃宣言 (Async)
 // ===============================
-async function declareAttack(atkSlot, defSlot = -1) {
+async function declareAttack(atkSlot, defSlot = -1, isAuto = false) {
     if (!gs || gs.gameOver) return;
+    if (!isAuto && gs.mode === MODE.CPU && !gs.currentPlayer.isHuman) return;
     if (gs.phase !== PHASE.MAIN && gs.phase !== PHASE.BATTLE) {
         gs.log('⚠ メインフェイズかバトルフェイズのみ攻撃できます');
         return;
@@ -880,17 +883,20 @@ function renderAll() {
     const p2NameEl = document.getElementById('p2-name');
     if (p2NameEl) p2NameEl.textContent = gs.player2.name + (gs._isOnlineHost ? ' (相手)' : '');
 
-    // オンラインホスト時は、相手のターンでも常に自分の手札(player1)を表示する
-    const handOwner = (gs._isOnlineHost) ? gs.player1 : gs.currentPlayer;
+    // CPUモードやオンラインホスト時は、相手のターンでも常に自分の手札(player1)を表示する
+    let handOwner = gs.currentPlayer;
+    if (gs._isOnlineHost || gs.mode === MODE.CPU) {
+        handOwner = gs.player1;
+    }
     renderHand(handOwner);
     renderField();
     renderGraveyard();
     renderTurnBadge();
 
-    // ホスト時のアクションバーおよびボタン制御
+    // ホスト時またはCPU時のアクションバーおよびボタン制御
     const atkBtn = document.getElementById('btn-attack');
     const endBtn = document.getElementById('btn-end-turn');
-    if (gs._isOnlineHost) {
+    if (gs._isOnlineHost || gs.mode === MODE.CPU) {
         const isMyTurn = (gs.currentPlayer === gs.player1);
         if (atkBtn) atkBtn.style.display = isMyTurn ? 'inline-block' : 'none';
         if (endBtn) endBtn.style.display = isMyTurn ? 'inline-block' : 'none';
@@ -902,15 +908,10 @@ function renderAll() {
     // スマホ向け：相手の手札の視覚化
     // 自分がP1なら相手はP2、自分がP2なら相手はP1
     if (window.innerWidth <= 768) {
-        if (gs._isOnlineHost || gs.mode === MODE.NORMAL || gs.mode === MODE.TEST) {
-            // ローカルでもとりあえず相手の枚数を表示。ホスト時は相手=p2
+        if (gs._isOnlineHost || gs.mode === MODE.NORMAL || gs.mode === MODE.TEST || gs.mode === MODE.CPU) {
+            // CPUやオンライン等でも相手の手札枚数を表示。相手=p2
             renderOppHandVisual(gs.player2, 'p2');
             renderOppHandVisual(gs.player1, 'p1', true); // 自分側はクリア
-        }
-        if (gs.mode === MODE.LOCAL_PVP) {
-            // ローカルPVPは手前がcurrentPlayer、奥がopponentPlayer
-            renderOppHandVisual(gs.opponentPlayer, gs.currentPlayer === gs.player1 ? 'p2' : 'p1');
-            renderOppHandVisual(gs.currentPlayer, gs.currentPlayer === gs.player1 ? 'p1' : 'p2', true);
         }
     } else {
         // PCレイアウト用にクリア

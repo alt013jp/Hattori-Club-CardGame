@@ -15,7 +15,11 @@ const puppeteer = require('puppeteer');
 
         // Fallback click just in case
         await page.evaluate(() => {
-            if (typeof startTestGame === 'function') startTestGame();
+            if (typeof startCPUGame === 'function') {
+                startCPUGame();
+            } else if (typeof startTestGame === 'function') {
+                startTestGame();
+            }
         });
 
         await new Promise(r => setTimeout(r, 2000));

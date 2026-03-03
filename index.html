@@ -40,9 +40,9 @@
                 🌐 オンライン対戦<br>
                 <small style="font-size:0.7rem;opacity:0.8">LAN内の2人対戦</small>
             </button>
-            <button class="btn-mode btn-local" id="btn-local-game" onclick="startLocalGame()">
-                🤝 ローカル対戦<br>
-                <small style="font-size:0.7rem;opacity:0.8">1台の端末で2人で遊ぶ</small>
+            <button class="btn-mode btn-local" id="btn-cpu-game" onclick="startCPUGame()">
+                🤖 CPUとの対戦<br>
+                <small style="font-size:0.7rem;opacity:0.8">1人でAIと遊ぶ</small>
             </button>
             <button class="btn-mode btn-test" id="btn-test-game" onclick="startTestGame()">
                 🧪 カード検証モード<br>
@@ -288,10 +288,11 @@
 
     <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
     <script src="cards.js"></script>
+    <script src="cpu.js"></script>
     <script src="game.js"></script>
 
     <script>
-        setTimeout(() => { if (typeof startTestGame === 'function') startTestGame(); }, 1500);
+        // デバッグ用の一時的な自動起動は削除
     </script>
 </body>
 
