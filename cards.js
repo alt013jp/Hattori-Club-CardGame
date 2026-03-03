@@ -105,7 +105,7 @@ const MONSTER_CARDS = [
     name: '角地 駿汰',
     type: CARD_TYPE.MONSTER,
     atk: 1200,
-    effect: '攻撃時ダイス5?6で次戦闘必勝',
+    effect: '攻撃時にダイスを振り5~6でその戦闘に必ず勝利する。',
     color: '#4B0082',
     emoji: '??',
     imageFile: 'kakuchi.jpg',
@@ -721,6 +721,98 @@ const MONSTER_CARDS = [
       }
     },
     onDestroy: null
+  },
+  // ===== 新規カード (Phase 34) =====
+  {
+    id: CARD_ID.FUSHIKI_YAKUZA,
+    name: '伏木のヤクザ',
+    type: CARD_TYPE.MONSTER,
+    atk: 1000,
+    effect: '起動効果(ゲーム中1回): 相手フィールド上のモンスター1体を破壊する',
+    color: '#4B0000',
+    emoji: '🕴️',
+    imageFile: '',
+    canUse: (gs, player) => true,
+    onPlay: (gs, owner) => {
+      gs.log(`【${owner.name}】伏木のヤクザを召喚！(ATK:1000)`);
+    },
+    onActivate: (gs, owner, slotIndex) => {
+      if (owner.hasUsedFushikiYakuza) {
+        gs.log(`【${owner.name}】伏木のヤクザの効果はゲーム中に1回しか使えません`);
+        return;
+      }
+      const opp = gs.getOpponent(owner);
+      const oppMonsters = opp.fieldMonster.map((m, idx) => m ? { m, idx } : null).filter(Boolean);
+      if (oppMonsters.length === 0) {
+        gs.log(`破壊できる相手モンスターがいません`);
+        return;
+      }
+      // 最初の相手モンスターを破壊する（もし複数いればUI選択が必要だが、現在はランダムか先頭）
+      const target = oppMonsters[0];
+      // destroyMonster は game.js のグローバル関数だが cards.jsからは叩けないので gs を通すか
+      // 相手の墓地送り処理で代替
+      opp.graveyard.push(target.m);
+      opp.fieldMonster[target.idx] = null;
+
+      owner.hasUsedFushikiYakuza = true;
+      gs.log(`【効果発動】伏木のヤクザ！相手の「${target.m.name}」を破壊した！`);
+    }
+  },
+  {
+    id: CARD_ID.ONSEN_TAMAGO_SOFT,
+    name: '温泉卵ソフト',
+    type: CARD_TYPE.MONSTER,
+    atk: 100,
+    effect: '起動効果(ターンに1回): 攻撃力+1800',
+    color: '#FFE4B5',
+    emoji: '🍦',
+    imageFile: '',
+    canUse: (gs, player) => true,
+    onPlay: (gs, owner) => {
+      gs.log(`【${owner.name}】温泉卵ソフトを召喚！(ATK:100)`);
+    },
+    onActivate: (gs, owner, slotIndex) => {
+      const self = owner.fieldMonster[slotIndex];
+      if (self) {
+        self.tempAtkBonus = (self.tempAtkBonus || 0) + 1800;
+        gs.log(`【効果発動】温泉卵ソフト！攻撃力が1800アップ！（現在:${self.atk + self.tempAtkBonus}）`);
+      }
+    }
+  },
+  {
+    id: CARD_ID.SAIKYOU_NO_FUTARI,
+    name: '最強のふたり',
+    type: CARD_TYPE.MONSTER,
+    atk: 2500,
+    effect: '手札か場の柳克憲と橋本泰成を墓地に送って特殊召喚',
+    color: '#FFD700',
+    emoji: '👥',
+    imageFile: '',
+    evolved: true, // 究極のパチンカスと同じレアデザインに
+    canUse: (gs, player) => {
+      // 柳と橋本が手札か場に揃っているか判定
+      const hasYanagi = [...player.hand, ...player.fieldMonster.filter(Boolean)].some(c => c.id === CARD_ID.YANAGI);
+      const hasHashimoto = [...player.hand, ...player.fieldMonster.filter(Boolean)].some(c => c.id === CARD_ID.HASHIMOTO);
+      return hasYanagi && hasHashimoto;
+    },
+    onPlay: (gs, owner) => {
+      // コストとして柳と橋本を墓地へ送る
+      const removeCost = (id) => {
+        const hIdx = owner.hand.findIndex(c => c.id === id);
+        if (hIdx !== -1) {
+          owner.graveyard.push(owner.hand.splice(hIdx, 1)[0]);
+          return;
+        }
+        const fIdx = owner.fieldMonster.findIndex(c => c && c.id === id);
+        if (fIdx !== -1) {
+          owner.graveyard.push(owner.fieldMonster[fIdx]);
+          owner.fieldMonster[fIdx] = null;
+        }
+      };
+      removeCost(CARD_ID.YANAGI);
+      removeCost(CARD_ID.HASHIMOTO);
+      gs.log(`【${owner.name}】柳 克憲と橋本 泰成を素材にして最強のふたりを特殊召喚！！(ATK:2500)`);
+    }
   }
 ];
 
@@ -1015,14 +1107,16 @@ const MAGIC_CARDS = [
     canUse: (gs, player) => true,
     onPlay: (gs, owner) => {
       const p1 = gs.player1, p2 = gs.player2;
+      const targetIds = [CARD_ID.HORIE, CARD_ID.RESEARCHER, CARD_ID.JOSOU_HORIE, CARD_ID.RO_KUN, CARD_ID.T_SHIRT_HORIE];
       [p1, p2].forEach(p => {
-        if (p.fieldMonster) {
-          if (p.fieldMonster.id === CARD_ID.HORIE || p.fieldMonster.id === CARD_ID.JOSOU_HORIE) {
-            p.fieldMonster[0].tempAtkBonus = (p.fieldMonster[0].tempAtkBonus || 0) + 300;
-            gs.log(`→ ${p.fieldMonster.name}のATK+300！`);
+        const m = p.fieldMonster && p.fieldMonster[0];
+        if (m) {
+          if (targetIds.includes(m.id)) {
+            m.tempAtkBonus = (m.tempAtkBonus || 0) + 300;
+            gs.log(`→ ${m.name}のATK+300！`);
           } else {
-            p.fieldMonster[0].tempAtkPenalty = (p.fieldMonster[0].tempAtkPenalty || 0) + 300;
-            gs.log(`→ ${p.fieldMonster.name}のATK-300！`);
+            m.tempAtkPenalty = (m.tempAtkPenalty || 0) + 300;
+            gs.log(`→ ${m.name}のATK-300！`);
           }
         }
       });
@@ -1298,6 +1392,48 @@ const MAGIC_CARDS = [
         gs.log(`→モンスターは含まれていなかったため、追加の代償はなし`);
       }
     }
+  },
+  // ===== 新規魔法 (Phase 34) =====
+  {
+    id: CARD_ID.RESURRECTION,
+    name: '復活演出',
+    type: CARD_TYPE.MAGIC,
+    effect: '自分か相手の墓地からモンスター1体を特殊召喚',
+    color: '#3d94ff',
+    emoji: '🌀',
+    imageFile: '',
+    canUse: (gs, player) => {
+      const opp = gs.getOpponent(player);
+      const hasMonsters = [...player.graveyard, ...opp.graveyard].some(c => c.type === CARD_TYPE.MONSTER);
+      // Wait, fieldMonster uses array of 5 slots. If there is a null slot, we have space.
+      const hasSpace = Array.isArray(player.fieldMonster) ? player.fieldMonster.includes(null) : !player.fieldMonster;
+      return hasMonsters && hasSpace;
+    },
+    onPlay: (gs, owner) => {
+      gs.log(`【${owner.name}】復活演出を発動！墓地のモンスターを選択してください`);
+      // Since `needsGraveyardSelect` exists, we can use it, but game.js only shows our own graveyard usually.
+      // Assuming `bothGraveyards: true` isn't fully implemented in game.js yet, but we will return it.
+      return { needsGraveyardSelect: true, bothGraveyards: true, selectType: CARD_TYPE.MONSTER, player: owner };
+    }
+  },
+  {
+    id: CARD_ID.BROKEN_CUP_NOODLE,
+    name: '破壊されたカップ麺',
+    type: CARD_TYPE.MAGIC,
+    effect: '手札からカードを1枚捨てる',
+    color: '#8B0000',
+    emoji: '🍜',
+    imageFile: '',
+    canUse: (gs, player) => player.hand.length > 0,
+    onPlay: (gs, owner) => {
+      // ランダムに1枚捨てる
+      if (owner.hand.length > 0) {
+        const idx = Math.floor(Math.random() * owner.hand.length);
+        const discarded = owner.hand.splice(idx, 1)[0];
+        owner.graveyard.push(discarded);
+        gs.log(`【${owner.name}】破壊されたカップ麺！手札から「${discarded.name}」を捨てた！`);
+      }
+    }
   }
 ];
 
@@ -1322,4 +1458,5 @@ function getRandomCards(n) {
   for (let i = 0; i < n; i++) cards.push(getRandomCard());
   return cards;
 }
+
 

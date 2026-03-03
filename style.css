@@ -2417,9 +2417,9 @@ body::before {
   justify-content: space-between;
   padding: 2px 6px;
   /* 上下左右のパディングを削減して縮小 */
-  background: rgba(0, 0, 0, 0.4);
-  /* 黒幕を少し薄く／小さく */
-  border-bottom: 1px solid rgba(201, 162, 39, 0.3);
+  background: transparent;
+  /* 背景を透過してフィールド色に統一 */
+  border-bottom: none;
   flex-shrink: 0;
   gap: 6px;
   min-height: 38px;
@@ -2578,9 +2578,9 @@ body::before {
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
-  background: rgba(0, 0, 0, 0.2);
-  /* 黒幕を薄く、主張を減らす */
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  background: transparent;
+  /* 背景を透過してフィールド色に統一 */
+  border-top: none;
   padding: 2px 0;
   /* 高さを削る */
 }

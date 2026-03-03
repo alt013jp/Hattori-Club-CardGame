@@ -206,8 +206,18 @@ class GameState {
 
     resetTempEffects(player) {
         if (player.fieldMonster && player.fieldMonster[0]) {
-            player.fieldMonster[0].tempAtkBonus = 0;
-            player.fieldMonster[0].tempAtkPenalty = 0;
+            const m = player.fieldMonster[0];
+            // ヤニくさいジャケットの効果終了処理（1ターン経過後 / またはバトルフェイズ終了後）
+            if (m.equipped === CARD_ID.YANI_JACKET) {
+                m.equipped = null;
+                if (player.fieldMagic && player.fieldMagic[0] && player.fieldMagic[0].id === CARD_ID.YANI_JACKET) {
+                    player.graveyard.push(player.fieldMagic[0]);
+                    player.fieldMagic[0] = null;
+                    gs && gs.log(`【効果終了】VISION ヤニくさいジャケットが破棄されました`);
+                }
+            }
+            m.tempAtkBonus = 0;
+            m.tempAtkPenalty = 0;
         }
         // 装備カード以外はターン終了時に破壊される魔法（HATTORI CLUBとか）
         // ただし現状の魔法は即時効果or装備or永続なので、ここでfieldMagicを破壊するのは装備カードまで破壊してしまうリスクがある。
@@ -619,15 +629,23 @@ async function useMagicCard(card, player, slotIdx) {
         return;
     }
 
-    // STARBUCKS: 墓地選択 UI or CPU Auto Select
+    // 墓地選択 UI or CPU Auto Select
     if (result && result.needsGraveyardSelect) {
         if (!player.isHuman && player.graveyard.length > 0) {
-            // CPUの場合は自動で先頭のカード（またはランダム）を選択して回収
+            // CPUの場合は自動で先頭のカード（またはランダム）を選択して回収/召喚
             const selected = player.graveyard.splice(0, 1)[0];
-            player.hand.push(selected);
-            gs.log(`🤖 CPU Action: STAR BUCKSの効果で墓地の${selected.name}を回収しました`);
+            if (result.specialSummon) {
+                const emptySlot = player.fieldMonster.indexOf(null);
+                if (emptySlot !== -1) {
+                    player.fieldMonster[emptySlot] = selected;
+                    gs.log(`🤖 CPU Action: 効果で墓地の${selected.name}を特殊召喚しました`);
+                }
+            } else {
+                player.hand.push(selected);
+                gs.log(`🤖 CPU Action: STAR BUCKSの効果で墓地の${selected.name}を回収しました`);
+            }
         } else {
-            showGraveyardSelect(result.player);
+            showGraveyardSelect(result.player, result);
         }
     }
 
@@ -994,14 +1012,6 @@ function renderPlayerInfo(player, prefix) {
 function renderPhase(phase) {
     const el = document.getElementById('phase-display');
     if (el) el.textContent = phase;
-
-    // フェイズ移行演出 (ユーザー要望によりBATTLE PHASEのみ、かつ移行時1回のみ表示)
-    if (gs && gs._lastShownPhase !== phase) {
-        gs._lastShownPhase = phase;
-        if (phase === PHASE.BATTLE) {
-            showPhaseIndicator(phase);
-        }
-    }
 }
 
 function showPhaseIndicator(msg) {
@@ -1202,31 +1212,48 @@ function createCardElement(card, idx, inHand = false) {
                 const inMainPhase = gs && (gs.phase === PHASE.MAIN || gs.phase === PHASE.BATTLE);
                 const canAttack = owner === 'me' && inMainPhase && card.type === CARD_TYPE.MONSTER && !gs.attackDeclaredThisTurn && !(gs.isFirstTurn && gs.currentPlayer === gs.firstPlayer);
 
+                let attackCb = null;
+                let attackTxt = null;
                 if (canAttack) {
-                    showCardDetail(card, () => {
+                    attackCb = () => {
                         const defender = gs.getOpponent(gs.currentPlayer);
                         const hasOppMonsters = defender.fieldMonster.some(m => m !== null);
 
                         if (!hasOppMonsters) {
-                            // 対象がいない場合は即ダイレクトアタック
                             if (_onlineRole === 'guest') {
                                 _sendOnlineAction({ type: 'attack', atkSlot: slot, defSlot: -1 });
                             } else {
                                 declareAttack(slot, -1);
                             }
                         } else {
-                            // 対象選択モードへ移行
                             _awaitingAttackTargetIdx = slot;
                             renderAll();
                             gs.log('攻撃対象のモンスターを選択してください（タップ）');
                         }
-                    }, '⚔️ 攻撃する');
+                    };
+                    attackTxt = '⚔️ 攻撃する';
+                }
+
+                const canActivate = owner === 'me' && gs.phase === PHASE.MAIN && card.onActivate && !card.hasActivatedThisTurn;
+                let activateCb = null;
+                let activateTxt = null;
+                if (canActivate) {
+                    activateCb = () => {
+                        card.onActivate(gs, gs.currentPlayer, slot);
+                        card.hasActivatedThisTurn = true;
+                        renderAll();
+                    };
+                    activateTxt = '✨ 効果を発動';
+                }
+
+                if (attackCb || activateCb) {
+                    showCardDetail(card, attackCb, attackTxt, activateCb, activateTxt);
                     return;
                 }
             }
 
             // 単なる詳細表示として開く（アクションボタンなし）
-            showCardDetail(card);
+            showCardDetail(card, null, null, null, null);
         });
     }
 
@@ -1449,8 +1476,23 @@ function triggerWinEffect(winner) {
 // ===============================
 // スターバックス 墓地選択UI
 // ===============================
-function showGraveyardSelect(player) {
-    if (!player || player.graveyard.length === 0) return;
+function showGraveyardSelect(player, result = null) {
+    if (!player) return;
+
+    let targetList = [...player.graveyard];
+    const isBoth = result && result.bothGraveyards;
+    const opp = gs ? gs.getOpponent(player) : null;
+    if (isBoth && opp) {
+        targetList = [...player.graveyard, ...opp.graveyard];
+        if (result.selectType) {
+            targetList = targetList.filter(c => c.type === result.selectType);
+        }
+    }
+
+    if (targetList.length === 0) {
+        gs && gs.log(`対象となるカードが墓地にありませんでした`);
+        return;
+    }
 
     const modal = document.createElement('div');
     modal.className = 'graveyard-select-modal';
@@ -1464,14 +1506,35 @@ function showGraveyardSelect(player) {
     document.body.appendChild(modal);
 
     const list = modal.querySelector('#gy-select-list');
-    player.graveyard.forEach((card, i) => {
+    targetList.forEach((card, i) => {
         const item = document.createElement('div');
         item.className = 'gy-select-item';
         item.innerHTML = `<span class="gy-item-emoji">${card.emoji || '🃏'}</span> ${card.name}`;
         item.onclick = () => {
-            const selected = player.graveyard.splice(i, 1)[0];
-            player.hand.push(selected);
-            gs.log(`【${player.name}】STAR BUCKS：墓地の${selected.name}を手札に加えた！`);
+            // 元の配列から削除する
+            let sourceGy = player.graveyard;
+            let idx = sourceGy.indexOf(card);
+            if (idx === -1 && isBoth) {
+                sourceGy = opp.graveyard;
+                idx = sourceGy.indexOf(card);
+            }
+
+            if (idx !== -1) {
+                const selected = sourceGy.splice(idx, 1)[0];
+                if (result && result.specialSummon) {
+                    const emptySlot = player.fieldMonster.indexOf(null);
+                    if (emptySlot !== -1) {
+                        player.fieldMonster[emptySlot] = selected;
+                        gs.log(`【${player.name}】効果で ${selected.name} を特殊召喚した！`);
+                    } else {
+                        player.hand.push(selected); // 空きがなければ手札へ
+                        gs.log(`【${player.name}】盤面がいっぱいのため ${selected.name} を手札に加えた`);
+                    }
+                } else {
+                    player.hand.push(selected);
+                    gs.log(`【${player.name}】墓地の ${selected.name} を手札に加えた！`);
+                }
+            }
             modal.remove();
             renderAll();
         };
@@ -2219,7 +2282,7 @@ function toggleLogModal() {
     overlay.style.display = overlay.style.display === 'none' ? 'flex' : 'none';
 }
 
-function showCardDetail(card, actionCallback = null, actionText = '使用する') {
+function showCardDetail(card, actionCallback = null, actionText = '使用する', activateCallback = null, activateText = '✨ 効果を発動') {
     const modal = document.getElementById('card-detail-modal');
     const view = document.getElementById('card-detail-view');
     const btnContainer = document.getElementById('card-detail-buttons');
@@ -2283,6 +2346,21 @@ function showCardDetail(card, actionCallback = null, actionText = '使用する'
                 actionCallback();
             };
             innerBtnContainer.appendChild(actionBtn);
+        }
+
+        if (activateCallback) {
+            const activateBtn = document.createElement('button');
+            activateBtn.className = 'btn btn-large btn-action-activate';
+            activateBtn.style.background = 'linear-gradient(135deg, #FF8C00, #FF4500)';
+            activateBtn.style.color = '#fff';
+            activateBtn.style.border = '2px solid #fff';
+            activateBtn.textContent = activateText;
+            activateBtn.onclick = (e) => {
+                e.stopPropagation();
+                closeCardDetail();
+                activateCallback();
+            };
+            innerBtnContainer.appendChild(activateBtn);
         }
 
         const closeBtn = document.createElement('button');
