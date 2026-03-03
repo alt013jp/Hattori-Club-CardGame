@@ -2361,12 +2361,15 @@ body::before {
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
-  padding: 6px 12px;
-  background: rgba(0, 0, 0, 0.5);
+  padding: 2px 6px;
+  /* 上下左右のパディングを削減して縮小 */
+  background: rgba(0, 0, 0, 0.4);
+  /* 黒幕を少し薄く／小さく */
   border-bottom: 1px solid rgba(201, 162, 39, 0.3);
   flex-shrink: 0;
-  gap: 8px;
-  min-height: 56px;
+  gap: 6px;
+  min-height: 38px;
+  /* 大幅に縮小 */
 }
 
 .g-topbar .player-panel {
@@ -2374,11 +2377,13 @@ body::before {
   display: flex;
   flex-direction: row;
   align-items: center;
-  gap: 8px;
-  background: rgba(255, 255, 255, 0.08);
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  /* より薄く */
   border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 12px;
-  padding: 4px 10px;
+  border-radius: 8px;
+  padding: 2px 6px;
+  /* パディング削減 */
   width: auto;
   min-width: 0;
   flex: 1;
@@ -2519,8 +2524,11 @@ body::before {
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
-  background: rgba(0, 0, 0, 0.35);
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.2);
+  /* 黒幕を薄く、主張を減らす */
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 2px 0;
+  /* 高さを削る */
 }
 
 /* controls-barの固定配置を解除してflowに戻す */

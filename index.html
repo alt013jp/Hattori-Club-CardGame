@@ -160,6 +160,8 @@
 
         <!-- 🍔 メニューボタン群 (右下に固定) -->
         <div class="menu-buttons-container" style="display:flex; flex-direction:row; gap:10px;">
+            <button id="end-turn-btn" class="menu-btn" onclick="endTurn()" title="ターン終了"
+                style="background: linear-gradient(135deg, #004d00, #008000); color: #0f8; font-size: 1.2rem; border-radius: 50%; width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,255,136,0.3); border: 2px solid #00ff88;">🔄</button>
             <button id="log-btn" class="menu-btn" onclick="toggleLogModal()" title="ゲームログ">📋</button>
             <button id="back-title-btn" class="menu-btn" onclick="goToTitle()" title="タイトルへ戻る">🏠</button>
         </div>

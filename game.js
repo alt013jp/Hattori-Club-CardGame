@@ -1043,36 +1043,7 @@ function renderHand(player) {
     toggleBtn.onclick = toggleHand;
     headerEl.appendChild(toggleBtn);
 
-    const endTurnBtn = document.createElement('button');
-    endTurnBtn.className = 'btn-end-turn-header';
-    endTurnBtn.style.padding = '8px 24px';
-    endTurnBtn.style.borderRadius = '8px';
-    endTurnBtn.style.background = 'linear-gradient(135deg, #003311, #005522)';
-    endTurnBtn.style.color = '#00ff88';
-    endTurnBtn.style.border = '2px solid #00ff88';
-    endTurnBtn.style.cursor = 'pointer';
-    endTurnBtn.style.fontWeight = 'bold';
-    endTurnBtn.style.pointerEvents = 'auto';
-    endTurnBtn.style.boxShadow = '0 4px 10px rgba(0,255,136,0.3)';
-    endTurnBtn.textContent = '✅ ターン終了';
-    endTurnBtn.onclick = () => {
-        if (gs && (gs.phase === PHASE.MAIN || gs.phase === PHASE.BATTLE)) {
-            endTurn();
-        }
-    };
-
-    // 自分のターンのメイン/バトルフェイズのみ表示
-    if (gs && gs._isOnlineHost ? (gs.currentPlayer === gs.player1) : true) {
-        if (gs && (gs.phase === PHASE.MAIN || gs.phase === PHASE.BATTLE)) {
-            endTurnBtn.style.display = 'block';
-        } else {
-            endTurnBtn.style.display = 'none';
-        }
-    } else {
-        endTurnBtn.style.display = 'none';
-    }
-
-    headerEl.appendChild(endTurnBtn);
+    // ターン終了ボタンは画面右下のメニューに移管されたため、手札上部での生成・描画は削除しました
 
     // headerElを先に挿入し、その後にcardsElを挿入（flex-direction: columnにより縦に並ぶ）
     el.appendChild(headerEl);
