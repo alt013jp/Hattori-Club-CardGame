@@ -62,21 +62,37 @@ body::before {
   padding: 2rem;
   position: relative;
   z-index: 1;
+  background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+  background-size: 200% 200%;
+  animation: gradientBG 15s ease infinite;
+}
+
+@keyframes gradientBG {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
 }
 
 .title-logo {
   font-family: 'Space Grotesk', 'Noto Sans JP', sans-serif;
-  font-size: clamp(2.5rem, 7vw, 5.5rem);
-  font-weight: 800;
+  font-size: clamp(3rem, 8vw, 6.5rem);
+  font-weight: 900;
   text-align: center;
   line-height: 1.1;
-  letter-spacing: -0.02em;
-  background: linear-gradient(135deg, #c9a227 0%, #fff8e1 40%, #c9a227 70%, #ffda6a 100%);
+  letter-spacing: -0.03em;
+  background: linear-gradient(135deg, #e6d070 0%, #fff8e1 40%, #e6d070 70%, #ffda6a 100%);
   -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  filter: drop-shadow(0 0 30px rgba(201, 162, 39, 0.6));
-  margin-bottom: 0.3rem;
+  color: transparent;
+  margin: 0 0 0.5rem 0;
+  text-shadow: 0px 4px 15px rgba(230, 208, 112, 0.3);
   animation: title-shimmer 3s ease-in-out infinite;
 }
 
@@ -2956,4 +2972,18 @@ body::before {
 .btn-action-main:active,
 .btn-action-close:active {
   transform: translateY(0);
+}
+
+/* Version Text */
+.version-text {
+  position: absolute;
+  bottom: 10px;
+  right: 15px;
+  font-family: 'Space Grotesk', 'Noto Sans JP', sans-serif;
+  font-size: 0.9rem;
+  font-weight: bold;
+  color: rgba(255, 255, 255, 0.7);
+  letter-spacing: 0.05em;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+  pointer-events: none;
 }

@@ -35,9 +35,7 @@ class Player {
 
     // 実効ATK計算（バフ/デバフ込み）- 個別スロット指定版
     getEffectiveAtk(gameState, slotIndex) {
-        if (!this.fieldMonster || !this.fieldMonster[slotIndex]) return 0;
-        const monster = this.fieldMonster[slotIndex];
-        const base = monster.atk;
+        const base = monster.getEffectiveAtk ? monster.getEffectiveAtk(monster.atk, gameState, this) : monster.atk;
         const temp = monster.tempAtkBonus || 0;
         const penalty = monster.tempAtkPenalty || 0;
         const permanent_card = monster.permanentAtkBonus || 0;
@@ -646,6 +644,23 @@ async function useMagicCard(card, player, slotIdx) {
             }
         } else {
             showGraveyardSelect(result.player, result);
+        }
+    }
+
+    // 手札選択 UI or CPU Auto Select
+    if (result && result.needsHandSelect) {
+        if (!player.isHuman && player.hand.length > 0) {
+            const count = result.discardCount || 1;
+            for (let i = 0; i < count; i++) {
+                if (player.hand.length > 0) {
+                    const idx = Math.floor(Math.random() * player.hand.length);
+                    const selected = player.hand.splice(idx, 1)[0];
+                    player.graveyard.push(selected);
+                    gs.log(`🤖 CPU Action: 効果で手札の${selected.name}を捨てました`);
+                }
+            }
+        } else {
+            showHandSelect(result.player, result);
         }
     }
 
@@ -1548,6 +1563,54 @@ function showGraveyardSelect(player, result = null) {
         list.appendChild(item);
     });
     modal.querySelector('#gy-cancel-btn').onclick = () => modal.remove();
+}
+
+// ===============================
+// 手札選択UI
+// ===============================
+function showHandSelect(player, result = null) {
+    if (!player || player.hand.length === 0) return;
+
+    let discardCount = result ? (result.discardCount || 1) : 1;
+
+    const modal = document.createElement('div');
+    modal.className = 'graveyard-select-modal';
+    modal.style.zIndex = '9999';
+    modal.innerHTML = `
+      <div class="graveyard-select-box" style="max-height: 80vh; overflow-y: auto;">
+        <div class="graveyard-select-title">🃏 捨てるカードを選択 (${discardCount}枚)</div>
+        <div class="graveyard-select-list" id="hand-select-list"></div>
+        <button class="btn-gs-cancel" id="hand-cancel-btn">キャンセル</button>
+      </div>
+    `;
+    document.body.appendChild(modal);
+
+    const list = modal.querySelector('#hand-select-list');
+
+    player.hand.forEach((card, i) => {
+        const item = document.createElement('div');
+        item.className = 'gy-select-item';
+        item.innerHTML = `<span class="gy-item-emoji">${card.emoji || '🃏'}</span> ${card.name}`;
+        item.onclick = () => {
+            const idx = player.hand.indexOf(card);
+            if (idx !== -1) {
+                const selected = player.hand.splice(idx, 1)[0];
+                player.graveyard.push(selected);
+                gs.log(`【${player.name}】手札から「${selected.name}」を捨てた！`);
+                discardCount--;
+                if (discardCount <= 0) {
+                    modal.remove();
+                } else {
+                    // Update title
+                    modal.querySelector('.graveyard-select-title').textContent = `🃏 捨てるカードを選択 (${discardCount}枚)`;
+                    item.remove(); // Remove clicked item from list
+                }
+                renderAll();
+            }
+        };
+        list.appendChild(item);
+    });
+    modal.querySelector('#hand-cancel-btn').onclick = () => modal.remove();
 }
 
 // ===============================

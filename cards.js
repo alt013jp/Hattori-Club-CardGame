@@ -58,6 +58,12 @@ const CARD_ID = {
   BATCHIIKE: 'batchiike', // 新規
   YANAGI_HAND: 'yanagi_hand', // 新規
   DEBUG_DRAW: 'debug_draw', // デバッグ用
+  // 追加リクエスト分 (Phase 36)
+  TAKAMORI_TERRY: 'takamori_terry',
+  YANAGI_INCINEROAR: 'yanagi_incineroar',
+  KAKUCHI_BANJO: 'kakuchi_banjo',
+  HORIE_SHOCHU: 'horie_shochu',
+  RECEDING_HAIRLINE: 'receding_hairline',
   // 追加リクエスト分
   TAKAMORI_MEDIA: 'takamori_media',
   ROBOT_ARMSPIN: 'robot_armspin',
@@ -253,7 +259,7 @@ const MONSTER_CARDS = [
   },
   {
     id: CARD_ID.ROBOT,
-    name: 'ロボット',
+    name: 'ハシモトのロボット',
     type: CARD_TYPE.MONSTER,
     atk: 1200,
     effect: 'なし',
@@ -778,6 +784,66 @@ const MONSTER_CARDS = [
         self.tempAtkBonus = (self.tempAtkBonus || 0) + 1800;
         gs.log(`【効果発動】温泉卵ソフト！攻撃力が1800アップ！（現在:${self.atk + self.tempAtkBonus}）`);
       }
+    }
+  },
+  {
+    id: CARD_ID.TAKAMORI_TERRY,
+    name: 'タカモリのテリー',
+    type: CARD_TYPE.MONSTER,
+    atk: 1200,
+    effect: 'なし',
+    color: '#8f4f2e',
+    emoji: '🐺',
+    imageFile: '',
+    canUse: (gs, player) => true,
+    onPlay: (gs, owner) => {
+      gs.log(`【${owner.name}】タカモリのテリーを召喚！(ATK:1200)`);
+    }
+  },
+  {
+    id: CARD_ID.YANAGI_INCINEROAR,
+    name: 'ヤナギのガオガエン',
+    type: CARD_TYPE.MONSTER,
+    atk: 1300,
+    effect: 'なし',
+    color: '#d44e33',
+    emoji: '🐯',
+    imageFile: '',
+    canUse: (gs, player) => true,
+    onPlay: (gs, owner) => {
+      gs.log(`【${owner.name}】ヤナギのガオガエンを召喚！(ATK:1300)`);
+    }
+  },
+  {
+    id: CARD_ID.KAKUCHI_BANJO,
+    name: 'カクチのバンジョー＆カズーイ',
+    type: CARD_TYPE.MONSTER,
+    atk: 1200,
+    effect: 'なし',
+    color: '#e4b64b',
+    emoji: '🐻',
+    imageFile: '',
+    canUse: (gs, player) => true,
+    onPlay: (gs, owner) => {
+      gs.log(`【${owner.name}】カクチのバンジョー＆カズーイを召喚！(ATK:1200)`);
+    }
+  },
+  {
+    id: CARD_ID.HORIE_SHOCHU,
+    name: '堀江家の焼酎',
+    type: CARD_TYPE.MONSTER,
+    atk: 0,
+    effect: 'このカードの攻撃力は墓地の枚数x100アップする。',
+    color: '#ffffff',
+    emoji: '🍶',
+    imageFile: '',
+    canUse: (gs, player) => true,
+    onPlay: (gs, owner) => {
+      const bonus = owner.graveyard.length * 100;
+      gs.log(`【${owner.name}】堀江家の焼酎を召喚！墓地の枚数は${owner.graveyard.length}枚、攻撃力が${bonus}にアップ！`);
+    },
+    getEffectiveAtk: (originalAtk, gs, owner) => {
+      return originalAtk + (owner.graveyard.length * 100);
     }
   },
   {
@@ -1423,19 +1489,36 @@ const MAGIC_CARDS = [
     id: CARD_ID.BROKEN_CUP_NOODLE,
     name: '破壊されたカップ麺',
     type: CARD_TYPE.MAGIC,
-    effect: '手札からカードを1枚捨てる',
+    effect: '手札からカードを1枚選んで捨てる',
     color: '#8B0000',
     emoji: '🍜',
     imageFile: '',
     canUse: (gs, player) => player.hand.length > 0,
     onPlay: (gs, owner) => {
-      // ランダムに1枚捨てる
-      if (owner.hand.length > 0) {
-        const idx = Math.floor(Math.random() * owner.hand.length);
-        const discarded = owner.hand.splice(idx, 1)[0];
-        owner.graveyard.push(discarded);
-        gs.log(`【${owner.name}】破壊されたカップ麺！手札から「${discarded.name}」を捨てた！`);
+      gs.log(`【${owner.name}】破壊されたカップ麺！手札から捨てるカードを選んでください`);
+      return { needsHandSelect: true, player: owner, discardCount: 1 };
+    }
+  },
+  {
+    id: CARD_ID.RECEDING_HAIRLINE,
+    name: '後退した前髪',
+    type: CARD_TYPE.MAGIC,
+    effect: 'ランダムに５枚をドローして、引いたカードをすぐに墓地に送る。',
+    color: '#555555',
+    emoji: '👴',
+    imageFile: '',
+    canUse: (gs, player) => true,
+    onPlay: (gs, owner) => {
+      let drawnNames = [];
+      for (let i = 0; i < 5; i++) {
+        const drawn = gs.drawCard(owner);
+        if (drawn) {
+          drawnNames.push(drawn.name);
+          owner.hand.pop(); // remove from hand
+          owner.graveyard.push(drawn); // add to graveyard
+        }
       }
+      gs.log(`【${owner.name}】後退した前髪を発動！5枚ドローして墓地へ送った！：${drawnNames.join(', ')}`);
     }
   },
   // ===== デバッグ用 =====
