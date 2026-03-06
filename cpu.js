@@ -7,8 +7,13 @@ async function processCPUTurn(gs) {
 
     gs.log(`🤖 CPUが思考中...`);
 
+    // ループ暴走検知用
+    let loopCount = 0;
+    const MAX_LOOP = 50;
+
     // フェイズに応じた行動をループで処理
-    while (!gs.gameOver && gs.currentPlayer === gs.player2 && !gs.currentPlayer.isHuman) {
+    while (!gs.gameOver && gs.currentPlayer === gs.player2 && !gs.currentPlayer.isHuman && loopCount < MAX_LOOP) {
+        loopCount++;
         await wait(CPU_DELAY_MS);
 
         if (gs.phase === PHASE.DRAW) {
@@ -19,6 +24,8 @@ async function processCPUTurn(gs) {
         } else if (gs.phase === PHASE.MAIN) {
             const action = chooseMainPhaseAction(gs);
             if (action && action.type !== 'END_PHASE') {
+                // 無限ループ防止のため手札が減らなかったり場が変わらなかった場合はスキップ等の対応が必要だが、
+                // MAX_LOOPを超えたら強制終了させるようにした
                 await evaluateAndExecuteAction(gs, action);
             } else {
                 // アクションがない場合はバトルフェイズへ
@@ -37,6 +44,11 @@ async function processCPUTurn(gs) {
         } else {
             break;
         }
+    }
+
+    if (loopCount >= MAX_LOOP) {
+        console.error("CPU loop ran away! Forcing end turn.");
+        await endTurn(true);
     }
 }
 
@@ -95,7 +107,9 @@ function chooseBattlePhaseAction(gs) {
 
     // モンスターが居て、まだ攻撃していないなら攻撃可能
     const myMonster = cpu.fieldMonster[0];
-    if (myMonster && !gs.attackDeclaredThisTurn) {
+    const canAttackTurn = !(gs.isFirstTurn && cpu === gs.firstPlayer); // 先攻1ターン目は攻撃不可
+
+    if (myMonster && !gs.attackDeclaredThisTurn && canAttackTurn) {
         const myAtk = cpu.getEffectiveAtk(gs, 0);
         const oppMonster = gs.opponentPlayer.fieldMonster[0];
 
