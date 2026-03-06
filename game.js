@@ -36,6 +36,9 @@ class Player {
 
     // 実効ATK計算（バフ/デバフ込み）- 個別スロット指定版
     getEffectiveAtk(gameState, slotIndex) {
+        const monster = this.fieldMonster[slotIndex];
+        if (!monster) return 0;
+
         const base = monster.getEffectiveAtk ? monster.getEffectiveAtk(monster.atk, gameState, this) : monster.atk;
         const temp = monster.tempAtkBonus || 0;
         const penalty = monster.tempAtkPenalty || 0;

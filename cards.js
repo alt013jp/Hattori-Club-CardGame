@@ -815,8 +815,8 @@ const MONSTER_CARDS = [
     atk: 1200,
     effect: 'なし',
     color: '#8f4f2e',
-    emoji: '🐺',
-    imageFile: '',
+    emoji: '🧢',
+    imageFile: 'terry.png',
     canUse: (gs, player) => true,
     onPlay: (gs, owner) => {
       gs.log(`【${owner.name}】タカモリのテリーを召喚！(ATK:1200)`);
@@ -829,8 +829,8 @@ const MONSTER_CARDS = [
     atk: 1300,
     effect: 'なし',
     color: '#d44e33',
-    emoji: '🐯',
-    imageFile: '',
+    emoji: '🔥',
+    imageFile: 'gaogaen.png',
     canUse: (gs, player) => true,
     onPlay: (gs, owner) => {
       gs.log(`【${owner.name}】ヤナギのガオガエンを召喚！(ATK:1300)`);
@@ -844,7 +844,7 @@ const MONSTER_CARDS = [
     effect: 'なし',
     color: '#e4b64b',
     emoji: '🐻',
-    imageFile: '',
+    imageFile: 'banjo.png',
     canUse: (gs, player) => true,
     onPlay: (gs, owner) => {
       gs.log(`【${owner.name}】カクチのバンジョー＆カズーイを召喚！(ATK:1200)`);
@@ -916,7 +916,7 @@ const MAGIC_CARDS = [
     effect: '相手フィールドのモンスター1体を選び、持ち主の手札に戻す。',
     color: '#333333',
     emoji: '🚪',
-    imageFile: '',
+    imageFile: 'shinji.png',
     canUse: (gs, player) => {
       const opponent = gs.getOpponent(player);
       return opponent.fieldMonster.some(m => m !== null);
@@ -940,7 +940,7 @@ const MAGIC_CARDS = [
     effect: '1ターンの間、自分フィールドのモンスターの攻撃力を2倍にする。ただし、1ターン後にそのカードの攻撃力は半分になる。',
     color: '#e8cfa6',
     emoji: '🍔',
-    imageFile: '',
+    imageFile: 'geki.jpg',
     canUse: (gs, player) => player.fieldMonster[0] !== null,
     onPlay: (gs, owner) => {
       const target = owner.fieldMonster[0];
