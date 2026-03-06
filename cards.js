@@ -64,6 +64,9 @@ const CARD_ID = {
   KAKUCHI_BANJO: 'kakuchi_banjo',
   HORIE_SHOCHU: 'horie_shochu',
   RECEDING_HAIRLINE: 'receding_hairline',
+  ZOMBIE_KATSUNORI: 'zombie_katsunori',
+  TAKAOKA_KAERE: 'takaoka_kaere',
+  GEKIBUTORI: 'gekibutori',
   // 追加リクエスト分
   TAKAMORI_MEDIA: 'takamori_media',
   ROBOT_ARMSPIN: 'robot_armspin',
@@ -90,7 +93,25 @@ const CARD_ID = {
 // ===============================
 // モンスターカード定義
 // ===============================
-const MONSTER_CARDS = [
+export const MONSTER_CARDS = [
+  {
+    id: CARD_ID.ZOMBIE_KATSUNORI,
+    name: 'ゾンビ・カツノリ',
+    type: CARD_TYPE.MONSTER,
+    atk: 1500,
+    effect: 'このカードが手札から墓地に捨てられた時、自分はデッキから1枚ドローする。さらに、自分の墓地のカードを3枚除外することで、このカードを墓地からフィールドに特殊召喚できる。',
+    color: '#3a5f41',
+    emoji: '🧟',
+    imageFile: 'zombie_katsunori.png',
+    canUse: (gs, player) => true,
+    onPlay: (gs, owner) => {
+      gs.log(`【${owner.name}】ゾンビ・カツノリを召喚！(ATK:1500)`);
+    },
+    onDiscard: (gs, owner) => {
+      gs.drawCard(owner);
+      gs.log(`【${owner.name}】ゾンビ・カツノリが捨てられ、1枚ドローした！`);
+    }
+  },
   // ===== 基本モンスター =====
   {
     id: CARD_ID.YANAGI,
@@ -280,7 +301,7 @@ const MONSTER_CARDS = [
     effect: 'このカードは戦闘を一度終えると自動的に破壊される。',
     color: '#a0522d',
     emoji: '🐰',
-    imageFile: '',
+    imageFile: 'katsunorikun.jpg',
     oneTimeAttacker: true,
     canUse: (gs, player) => true,
     onPlay: (gs, owner) => {
@@ -296,7 +317,7 @@ const MONSTER_CARDS = [
     effect: 'このカードは相手モンスターとの戦闘では2回まで破壊されない。（魔法カードでは破壊される）',
     color: '#ffffff',
     emoji: '🚄',
-    imageFile: '',
+    imageFile: 'sinkansen.jpg',
     battleResist: 2, // 戦闘破壊耐性カウンタ（game.jsで処理）
     canUse: (gs, player) => true,
     onPlay: (gs, owner) => {
@@ -312,7 +333,7 @@ const MONSTER_CARDS = [
     effect: 'なし',
     color: '#00ced1',
     emoji: '🏪',
-    imageFile: '',
+    imageFile: 'christmas.jpg',
     canUse: (gs, player) => true,
     onPlay: (gs, owner) => {
       gs.log(`【${owner.name}】聖夜のコンビニ店員を召喚！(ATK:1400)`);
@@ -327,7 +348,7 @@ const MONSTER_CARDS = [
     effect: 'このカードが召喚された場合、ランダムに2枚カードを手札に加える。',
     color: '#dc143c',
     emoji: '🚗',
-    imageFile: '',
+    imageFile: 'husler.png',
     canUse: (gs, player) => true,
     onPlay: (gs, owner) => {
       gs.log(`【${owner.name}】ハットリ会の足 ハスラーを召喚！効果でデッキから2枚ドロー！`);
@@ -344,7 +365,7 @@ const MONSTER_CARDS = [
     effect: 'このカードがモンスターカードゾーンに出ているときに、自分のターンに1回のみ発動可能、相手の手札を１枚ランダムに選び、それを自分の手札に加える。',
     color: '#8a2be2',
     emoji: '👁️',
-    imageFile: '',
+    imageFile: 'vision_stealer.png',
     canUse: (gs, player) => true,
     onPlay: (gs, owner) => {
       gs.log(`【${owner.name}】ヴィジョンを盗みし者を召喚！(ATK:1000)`);
@@ -609,7 +630,7 @@ const MONSTER_CARDS = [
     effect: '堀江 俊郎を手札から捨てる、または場の堀江 俊郎を墓地に送って使用。使用時2ドロー',
     color: '#4a0055',
     emoji: '??',
-    imageFile: 'josou.png',
+    imageFile: 'ai.png',
     evolved: true,
     costCardId: CARD_ID.HORIE,
     canUse: (gs, player) => player.hand.some(c => c.id === CARD_ID.HORIE) || (player.fieldMonster && player.fieldMonster.id === CARD_ID.HORIE),
@@ -738,7 +759,7 @@ const MONSTER_CARDS = [
     effect: '起動効果(ゲーム中1回): 相手フィールド上のモンスター1体を破壊する',
     color: '#4B0000',
     emoji: '🕴️',
-    imageFile: '',
+    imageFile: 'hushiki.png',
     canUse: (gs, player) => true,
     onPlay: (gs, owner) => {
       gs.log(`【${owner.name}】伏木のヤクザを召喚！(ATK:1000)`);
@@ -773,7 +794,7 @@ const MONSTER_CARDS = [
     effect: '起動効果(ターンに1回): 攻撃力+1800',
     color: '#FFE4B5',
     emoji: '🍦',
-    imageFile: '',
+    imageFile: 'onsen.png',
     canUse: (gs, player) => true,
     onPlay: (gs, owner) => {
       gs.log(`【${owner.name}】温泉卵ソフトを召喚！(ATK:100)`);
@@ -836,7 +857,7 @@ const MONSTER_CARDS = [
     effect: 'このカードの攻撃力は墓地の枚数x100アップする。',
     color: '#ffffff',
     emoji: '🍶',
-    imageFile: '',
+    imageFile: 'shoutyuu.jpg',
     canUse: (gs, player) => true,
     onPlay: (gs, owner) => {
       const bonus = owner.graveyard.length * 100;
@@ -854,7 +875,7 @@ const MONSTER_CARDS = [
     effect: '手札か場の柳克憲と橋本泰成を墓地に送って特殊召喚',
     color: '#FFD700',
     emoji: '👥',
-    imageFile: '',
+    imageFile: 'double.png',
     evolved: true, // 究極のパチンカスと同じレアデザインに
     canUse: (gs, player) => {
       // 柳と橋本が手札か場に揃っているか判定
@@ -886,7 +907,64 @@ const MONSTER_CARDS = [
 // ===============================
 // 魔法カード定義
 // ===============================
-const MAGIC_CARDS = [
+export const MAGIC_CARDS = [
+  {
+    id: CARD_ID.TAKAOKA_KAERE,
+    name: '高岡信二「お前もう帰れ」',
+    type: CARD_TYPE.MAGIC,
+    effect: '相手フィールドのモンスター1体を選び、持ち主の手札に戻す。',
+    color: '#333333',
+    emoji: '🚪',
+    imageFile: '',
+    canUse: (gs, player) => {
+      const opponent = gs.getOpponent(player);
+      return opponent.fieldMonster.some(m => m !== null);
+    },
+    onPlay: (gs, owner) => {
+      const opponent = gs.getOpponent(owner);
+      const targetList = opponent.fieldMonster.filter(m => m !== null);
+      if (targetList.length > 0) {
+        // 現在は1スロット前提のため0番目を戻す
+        const target = opponent.fieldMonster[0];
+        opponent.hand.push(target);
+        opponent.fieldMonster[0] = null;
+        gs.log(`【${owner.name}】高岡信二「お前もう帰れ」！相手の「${target.name}」を手札に戻した！`);
+      }
+    }
+  },
+  {
+    id: CARD_ID.GEKIBUTORI,
+    name: '激太り',
+    type: CARD_TYPE.MAGIC,
+    effect: '1ターンの間、自分フィールドのモンスターの攻撃力を2倍にする。ただし、1ターン後にそのカードの攻撃力は半分になる。',
+    color: '#e8cfa6',
+    emoji: '🍔',
+    imageFile: '',
+    canUse: (gs, player) => player.fieldMonster[0] !== null,
+    onPlay: (gs, owner) => {
+      const target = owner.fieldMonster[0];
+      if (target) {
+        const bonus = target.atk; // 2倍にするため、ベースATK分を一時ボーナスとして付与
+        target.tempAtkBonus = (target.tempAtkBonus || 0) + bonus;
+        gs.log(`【${owner.name}】激太り！「${target.name}」の攻撃力が一時的に2倍になった！`);
+
+        // 1ターン後に半分にする遅延効果
+        gs.delayedEffects.push({
+          type: 'gekibutori_debuff',
+          targetPlayer: owner,
+          targetCardId: target.id,
+          countdown: 2, // 相手ターン、自分ターンと跨ぐため2を設定すると次の自分のターンに発動
+          execute: (gsInstance) => {
+            const currentMonster = owner.fieldMonster[0];
+            if (currentMonster && currentMonster.id === target.id) {
+              currentMonster.permanentAtkPenalty = (currentMonster.permanentAtkPenalty || 0) + Math.floor(currentMonster.atk / 2);
+              gsInstance.log(`激太りの副作用！「${currentMonster.name}」の攻撃力が半分になった！`);
+            }
+          }
+        });
+      }
+    }
+  },
   {
     id: CARD_ID.YANI_JACKET,
     name: 'VISION ヤニくさいジャケット',
@@ -1107,7 +1185,7 @@ const MAGIC_CARDS = [
     effect: '自分フィールドのモンスターカードの攻撃力を500アップさせる。ただし、この効果を受けたモンスターは１度戦闘を行うと自動的に破壊される。(相手に攻撃され、破壊されなかった場合でも自動的に破壊。）',
     color: '#ff4500',
     emoji: '🎆',
-    imageFile: '',
+    imageFile: 'kawakita.PNG',
     canUse: (gs, player) => !!player.fieldMonster[0], // モンスターがいなければ使用不可
     onPlay: (gs, owner) => {
       if (owner.fieldMonster[0]) {
@@ -1124,7 +1202,7 @@ const MAGIC_CARDS = [
     effect: 'このカードを発動したターンのみ、自分自身が受けるダメージは相手プレイヤーが代わりに受ける。（相手のエンドフェイズまで効果が持続。相手フィールドにモンスターカードが存在していても、それを無視してプレイヤーに直接ダメージを与える処理。）',
     color: '#8b4513',
     emoji: '📦',
-    imageFile: '',
+    imageFile: 'koru.jpeg',
     canUse: (gs, player) => true,
     onPlay: (gs, owner) => {
       owner.cortileActive = true;
@@ -1135,18 +1213,16 @@ const MAGIC_CARDS = [
     id: CARD_ID.TEQUILA,
     name: 'テキーラリボルバーショット',
     type: CARD_TYPE.MAGIC,
-    effect: '100~1000のランダムダメージ',
+    effect: '相手プレイヤーのライフポイントに500のダメージをあたえる。',
     color: '#330000',
-    emoji: '??',
+    emoji: '🔫',
     imageFile: 'TEQUILA.png',
     canUse: (gs, player) => true,
     onPlay: (gs, owner) => {
       const opponent = gs.getOpponent(owner);
-      // 100?1000（100刻み、10ステップ）
-      const damage = (Math.floor(Math.random() * 10) + 1) * 100;
-      opponent.lp -= damage;
+      opponent.lp -= 500;
       if (opponent.lp < 0) opponent.lp = 0;
-      gs.log(`【${owner.name}】テキーラリボルバーショット！${damage}ダメージ！(相手LP:${opponent.lp})`);
+      gs.log(`【${owner.name}】テキーラリボルバーショット！500ダメージ！(LP:${opponent.lp})`);
     }
   },
   {
@@ -1384,7 +1460,7 @@ const MAGIC_CARDS = [
     effect: 'お互いの手札を全て墓地に送り、お互いに5枚を手札に加える。',
     color: '#ff8c00',
     emoji: '??',
-    imageFile: 'iki.JPG',
+    imageFile: 'iki.jpg',
     canUse: (gs, player) => true,
     onPlay: (gs, owner) => {
       const opponent = gs.getOpponent(owner);
@@ -1470,7 +1546,7 @@ const MAGIC_CARDS = [
     effect: '自分か相手の墓地からモンスター1体を特殊召喚',
     color: '#3d94ff',
     emoji: '🌀',
-    imageFile: '',
+    imageFile: 'enshutu.jpg',
     canUse: (gs, player) => {
       const opp = gs.getOpponent(player);
       const hasMonsters = [...player.graveyard, ...opp.graveyard].some(c => c.type === CARD_TYPE.MONSTER);
@@ -1492,7 +1568,7 @@ const MAGIC_CARDS = [
     effect: '手札からカードを1枚選んで捨てる',
     color: '#8B0000',
     emoji: '🍜',
-    imageFile: '',
+    imageFile: 'cup.png',
     canUse: (gs, player) => player.hand.length > 0,
     onPlay: (gs, owner) => {
       gs.log(`【${owner.name}】破壊されたカップ麺！手札から捨てるカードを選んでください`);
@@ -1506,7 +1582,7 @@ const MAGIC_CARDS = [
     effect: 'ランダムに５枚をドローして、引いたカードをすぐに墓地に送る。',
     color: '#555555',
     emoji: '👴',
-    imageFile: '',
+    imageFile: 'koutai.png',
     canUse: (gs, player) => true,
     onPlay: (gs, owner) => {
       let drawnNames = [];

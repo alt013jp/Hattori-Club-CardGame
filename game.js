@@ -29,6 +29,7 @@ class Player {
         this.fieldMonster = [null]; // 1対1: 最大1枚
         this.fieldMagic = [null];   // 1対1: 最大1枚
         this.graveyard = [];
+        this.exiled = [];
         this.skipNextDraw = false;
         this.delayedEffects = []; // { type: 'damage', amount: 2000, countdown: 2, message: '...' }
     }
@@ -2509,6 +2510,13 @@ function renderGraveyard() {
     const p2Count = document.getElementById('p2-grave-count');
     if (p2Count) p2Count.textContent = gs.player2.graveyard.length;
 
+    // Update exiled counts
+    const p1ExiledCount = document.getElementById('p1-exiled-count');
+    if (p1ExiledCount) p1ExiledCount.textContent = gs.player1.exiled.length;
+
+    const p2ExiledCount = document.getElementById('p2-exiled-count');
+    if (p2ExiledCount) p2ExiledCount.textContent = gs.player2.exiled.length;
+
     // 動的スタイル変更
     const p1Btn = document.querySelector(`button[onclick="showGraveyard('p1')"]`);
     if (p1Btn) {
@@ -2565,7 +2573,38 @@ function showGraveyard(prefix) {
             // クリックで詳細表示（オプション）
             item.onclick = (e) => {
                 e.stopPropagation();
-                showCardDetail(card);
+                if (card.id === CARD_ID.ZOMBIE_KATSUNORI && prefix === 'p1' && player.graveyard.length >= 4) {
+                    showCardDetail(card, () => {
+                        const emptySlot = getFirstEmptySlot(player.fieldMonster);
+                        if (emptySlot === -1) {
+                            gs.log('⚠ フィールド(モンスター)に空きがありません！');
+                            return;
+                        }
+
+                        // remove zombie from grave
+                        const zIdx = player.graveyard.indexOf(card);
+                        player.graveyard.splice(zIdx, 1);
+
+                        // randomly exile 3 other cards
+                        for (let i = 0; i < 3; i++) {
+                            const rIdx = Math.floor(Math.random() * player.graveyard.length);
+                            player.exiled.push(player.graveyard.splice(rIdx, 1)[0]);
+                        }
+
+                        player.fieldMonster[emptySlot] = Object.assign({}, card, {
+                            tempAtkBonus: 0,
+                            tempAtkPenalty: 0,
+                            permanentAtkBonus: 0
+                        });
+
+                        gs.log(`【${player.name}】墓地のカードを3枚除外し、ゾンビ・カツノリを復活させた！`);
+                        closeGraveyardModal();
+                        closeCardDetail();
+                        renderAll();
+                    }, '3枚除外して特殊召喚', null, null);
+                } else {
+                    showCardDetail(card);
+                }
             };
             list.appendChild(item);
         });
@@ -2576,6 +2615,50 @@ function showGraveyard(prefix) {
 
 function closeGraveyardModal() {
     const modal = document.getElementById('graveyard-modal');
+    if (modal) modal.style.display = 'none';
+}
+
+function showExiled(prefix) {
+    if (!gs) return;
+    const player = (prefix === 'p1') ? gs.player1 : gs.player2;
+    const modal = document.getElementById('exiled-modal');
+    const list = document.getElementById('exiled-list');
+    const title = document.getElementById('exiled-title');
+
+    if (!modal || !list) return;
+
+    title.textContent = `🌀 ${player.name} の除外ゾーン (${player.exiled.length}枚)`;
+    list.innerHTML = '';
+
+    if (player.exiled.length === 0) {
+        list.innerHTML = '<div style="color:#aaa; text-align:center; padding:20px;">除外されたカードはありません</div>';
+    } else {
+        player.exiled.forEach((card, idx) => {
+            const item = document.createElement('div');
+            item.className = 'graveyard-item';
+            const isMonster = card.type === CARD_TYPE.MONSTER;
+            item.innerHTML = `
+                <div class="graveyard-card-name">
+                    <span style="color:${isMonster ? '#4682B4' : '#006400'}; font-weight:bold;">
+                        ${isMonster ? '[M]' : '[魔]'}
+                    </span> 
+                    ${card.name}
+                </div>
+                <div style="font-size:0.8rem; color:#ccc;">${card.effect ? card.effect.substring(0, 30) + '...' : ''}</div>
+            `;
+            item.onclick = (e) => {
+                e.stopPropagation();
+                showCardDetail(card);
+            };
+            list.appendChild(item);
+        });
+    }
+
+    modal.style.display = 'flex';
+}
+
+function closeExiledModal() {
+    const modal = document.getElementById('exiled-modal');
     if (modal) modal.style.display = 'none';
 }
 
