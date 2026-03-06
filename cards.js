@@ -93,7 +93,7 @@ const CARD_ID = {
 // ===============================
 // モンスターカード定義
 // ===============================
-export const MONSTER_CARDS = [
+const MONSTER_CARDS = [
   {
     id: CARD_ID.ZOMBIE_KATSUNORI,
     name: 'ゾンビ・カツノリ',
@@ -907,7 +907,7 @@ export const MONSTER_CARDS = [
 // ===============================
 // 魔法カード定義
 // ===============================
-export const MAGIC_CARDS = [
+const MAGIC_CARDS = [
   {
     id: CARD_ID.TAKAOKA_KAERE,
     name: '高岡信二「お前もう帰れ」',
@@ -1614,7 +1614,6 @@ export const MAGIC_CARDS = [
   }
 ];
 
-// 全カードリスト
 const ALL_CARDS = [...MONSTER_CARDS, ...MAGIC_CARDS];
 
 // 重み付き抽選（進化カードは約10ドローに1枚　weight=0.1）
