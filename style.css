@@ -2439,13 +2439,21 @@ body::before {
 .g-topbar .player-panel {
   position: static;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 2px;
+  justify-content: center;
+  gap: 10px;
   background: transparent;
   border: none;
   padding: 0;
   width: 45%;
+}
+
+.g-topbar .player-name {
+  width: auto;
+  border-bottom: none;
+  padding-bottom: 0;
 }
 
 .g-topbar-center {
