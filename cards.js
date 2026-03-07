@@ -202,8 +202,8 @@ const MONSTER_CARDS = [
     atk: 2000,
     effect: 'このカードは戦闘を一度終えると勝敗に関わらず墓地に送られる',
     color: '#4682B4',
-    emoji: '??',
-    imageFile: 'hashimoto.jpg',
+    emoji: '🧔',
+    imageFile: 'taisei.jpg',
     oneTimeAttacker: true, // 戦闘後自壊フラグ
     canUse: (gs, player) => true,
     onPlay: (gs, owner) => {
@@ -1617,7 +1617,7 @@ const MAGIC_CARDS = [
 
 const ALL_CARDS = [...MONSTER_CARDS, ...MAGIC_CARDS];
 
-// 重み付き抽選（進化カードは約10ドローに1枚　weight=0.1）
+// 重み付き抽選（進化カードの出現率を少しアップ weight=0.25）
 // 新規カードが増えたので調整不要。
 function getRandomCard() {
   if (typeof gs !== 'undefined' && gs && gs.mode === 'test') { // gs.mode === MODE.TEST
@@ -1626,7 +1626,7 @@ function getRandomCard() {
   }
 
   const validCards = ALL_CARDS.filter(c => c.id !== CARD_ID.DEBUG_DRAW);
-  const weights = validCards.map(c => c.evolved ? 0.1 : 1.0);
+  const weights = validCards.map(c => c.evolved ? 0.25 : 1.0);
   const total = weights.reduce((a, b) => a + b, 0);
   let rand = Math.random() * total;
   for (let i = 0; i < validCards.length; i++) {

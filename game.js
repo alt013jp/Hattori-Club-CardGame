@@ -1424,6 +1424,21 @@ function renderGameOver() {
     if (msg) {
         msg.textContent = gs.winner ? `🏆 ${gs.winner.name} の勝利！` : 'ゲーム終了';
     }
+
+    // モードに応じたボタンの表示切替
+    const btnBattle = el.querySelector('.btn-battle');
+    const btnTest = el.querySelector('.btn-test');
+
+    if (btnBattle && btnTest) {
+        if (gs.mode === MODE.TEST) {
+            btnBattle.style.display = 'none';
+            btnTest.style.display = 'inline-block';
+        } else {
+            // NORMAL (CPU) や ONLINE の場合
+            btnBattle.style.display = 'inline-block';
+            btnTest.style.display = 'none';
+        }
+    }
 }
 
 // ===============================
