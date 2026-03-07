@@ -2444,6 +2444,7 @@ body::before {
   justify-content: center;
   gap: 10px;
   background: transparent;
+  backdrop-filter: none;
   border: none;
   padding: 0;
   width: 45%;
