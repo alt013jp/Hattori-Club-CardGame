@@ -427,6 +427,8 @@ async function doStartTurn() {
                     gs.currentPlayer.lp -= eff.amount;
                     if (gs.currentPlayer.lp < 0) gs.currentPlayer.lp = 0;
                     gs.log(`【遅延ダメージ】${eff.message || ''} ${eff.amount}ダメージ！(LP:${gs.currentPlayer.lp})`);
+                } else if (typeof eff.execute === 'function') {
+                    eff.execute(gs);
                 }
                 gs.currentPlayer.delayedEffects.splice(i, 1);
             }
@@ -1351,14 +1353,12 @@ function renderFieldZone(zoneId, cards, player) {
 
             if (card.type === CARD_TYPE.MONSTER) {
                 const baseAtk = card.atk;
-                let effAtk = baseAtk;
-                const temp = card.tempAtkBonus || 0;
-                const penalty = card.tempAtkPenalty || 0;
-                const perm = card.permanentAtkBonus || 0;
-                effAtk = Math.max(0, baseAtk + temp + perm - penalty);
+                const effAtk = player.getEffectiveAtk(gs, i);
+
+                const atkEl = cardEl.querySelector('.card-atk');
+                if (atkEl) atkEl.textContent = `ATK: ${effAtk}`;
 
                 if (effAtk !== baseAtk) {
-                    const atkEl = cardEl.querySelector('.card-atk');
                     if (atkEl) atkEl.textContent = `ATK: ${effAtk} (基:${baseAtk})`;
                 }
 

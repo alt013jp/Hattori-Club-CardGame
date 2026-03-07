@@ -950,7 +950,7 @@ const MAGIC_CARDS = [
         gs.log(`【${owner.name}】激太り！「${target.name}」の攻撃力が一時的に2倍になった！`);
 
         // 1ターン後に半分にする遅延効果
-        gs.delayedEffects.push({
+        owner.delayedEffects.push({
           type: 'gekibutori_debuff',
           targetPlayer: owner,
           targetCardId: target.id,

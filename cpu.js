@@ -1,6 +1,6 @@
 // cpu.js - CPU思考ルーチンとターン処理
 
-const CPU_DELAY_MS = 400; // 人間が視認でき、かつ長すぎないディレイ速さ
+const CPU_DELAY_MS = 1500; // 人間が視認でき、かつ長すぎないディレイ速さ
 
 async function processCPUTurn(gs) {
     if (!gs || gs.gameOver || gs.currentPlayer.isHuman) return;

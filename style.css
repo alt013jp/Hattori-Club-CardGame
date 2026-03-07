@@ -231,9 +231,8 @@ body::before {
   font-size: 1.2rem;
   font-weight: 700;
   padding: 0.3rem 1rem;
-  background: rgba(201, 162, 39, 0.15);
-  border: 1px solid var(--accent-gold);
-  border-radius: 4px;
+  background: transparent;
+  border: none;
   color: var(--accent-gold);
 }
 
@@ -2430,8 +2429,8 @@ body::before {
   align-items: stretch;
   justify-content: space-between;
   padding: 2px 4px;
-  background: rgba(0, 0, 0, 0.4);
-  border-bottom: 1px solid rgba(201, 162, 39, 0.3);
+  background: transparent;
+  border-bottom: none;
   flex-shrink: 0;
   position: relative;
 }
