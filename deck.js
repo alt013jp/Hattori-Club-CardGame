@@ -116,8 +116,40 @@ function renderCardPool() {
             <div class="pool-card-count">所持: ${countInDeck}/${MAX_SAME_CARD}</div>
         `;
 
-        // タップで追加
-        cardEl.onclick = () => {
+        // タップ/クリックで追加、長押しでプレビュー
+        let pressTimer;
+        let isLongPress = false;
+
+        const startPress = (e) => {
+            isLongPress = false;
+            pressTimer = setTimeout(() => {
+                isLongPress = true;
+                if (typeof showCardDetail === 'function') {
+                    showCardDetail(card);
+                }
+            }, 600); // 600msで長押し判定
+        };
+
+        const cancelPress = () => {
+            clearTimeout(pressTimer);
+        };
+
+        cardEl.addEventListener('mousedown', startPress);
+        cardEl.addEventListener('touchstart', (e) => {
+            // e.preventDefault(); を入れるとスクロールできなくなるので注意
+            startPress(e);
+        }, { passive: true });
+
+        cardEl.addEventListener('mouseup', cancelPress);
+        cardEl.addEventListener('mouseleave', cancelPress);
+        cardEl.addEventListener('touchend', cancelPress);
+        cardEl.addEventListener('touchcancel', cancelPress);
+
+        cardEl.onclick = (e) => {
+            if (isLongPress) {
+                e.preventDefault();
+                return; // 長押し実行後は追加処理をキャンセル
+            }
             if (countInDeck < MAX_SAME_CARD && editingDeckCards.length < MAX_DECK_SIZE) {
                 editingDeckCards.push(card.id);
                 renderCardPool();
@@ -129,7 +161,6 @@ function renderCardPool() {
             }
         };
 
-        // 右クリック等でプレビュー（スマホなら長押し対応が必要だがここでは一旦クリックのみ）
         poolContainer.appendChild(cardEl);
     });
 }
@@ -166,8 +197,36 @@ function renderEditingDeck() {
             <span class="dl-count">x${count}</span>
         `;
 
-        // タップで1枚削除
-        item.onclick = () => {
+        // タップ/クリックで削除、長押しでプレビュー
+        let pressTimer;
+        let isLongPress = false;
+
+        const startPress = (e) => {
+            isLongPress = false;
+            pressTimer = setTimeout(() => {
+                isLongPress = true;
+                if (typeof showCardDetail === 'function') {
+                    showCardDetail(card);
+                }
+            }, 600);
+        };
+
+        const cancelPress = () => {
+            clearTimeout(pressTimer);
+        };
+
+        item.addEventListener('mousedown', startPress);
+        item.addEventListener('touchstart', startPress, { passive: true });
+        item.addEventListener('mouseup', cancelPress);
+        item.addEventListener('mouseleave', cancelPress);
+        item.addEventListener('touchend', cancelPress);
+        item.addEventListener('touchcancel', cancelPress);
+
+        item.onclick = (e) => {
+            if (isLongPress) {
+                e.preventDefault();
+                return;
+            }
             const idx = editingDeckCards.indexOf(card.id);
             if (idx !== -1) {
                 editingDeckCards.splice(idx, 1);

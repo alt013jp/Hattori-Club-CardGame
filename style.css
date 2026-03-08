@@ -3002,7 +3002,9 @@ body::before {
   letter-spacing: 0.05em;
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
   pointer-events: none;
-}/* =========================================
+}
+
+/* =========================================
    Deck Editor & Selection UI Styles
    ========================================= */
 
@@ -3014,9 +3016,11 @@ body::before {
 #deck-selection-list::-webkit-scrollbar {
   width: 8px;
 }
+
 #deck-selection-list::-webkit-scrollbar-track {
   background: #111;
 }
+
 #deck-selection-list::-webkit-scrollbar-thumb {
   background: #555;
   border-radius: 4px;
@@ -3032,16 +3036,19 @@ body::before {
   padding: 10px 15px;
   color: #fff;
 }
+
 .deck-select-item .ds-info h3 {
   margin: 0 0 5px 0;
   font-size: 1.1rem;
   color: var(--accent-gold);
 }
+
 .deck-select-item .ds-info p {
   margin: 0;
   font-size: 0.9rem;
   color: #94a3b8;
 }
+
 .deck-select-item .ds-actions {
   display: flex;
   gap: 10px;
@@ -3058,16 +3065,22 @@ body::before {
   transition: transform 0.1s, border-color 0.1s;
   display: flex;
   flex-direction: column;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: pan-y;
 }
+
 .pool-card-item:hover {
   transform: translateY(-2px);
   border-color: var(--accent-gold);
 }
+
 .pool-card-item.max-reached {
   opacity: 0.5;
   pointer-events: none;
   filter: grayscale(100%);
 }
+
 .pool-card-img {
   width: 100%;
   height: 80px;
@@ -3075,10 +3088,12 @@ body::before {
   background-position: center;
   border-bottom: 1px solid #000;
 }
+
 .pool-card-info {
   padding: 5px;
   text-align: center;
 }
+
 .pool-card-name {
   font-size: 0.8rem;
   font-weight: bold;
@@ -3087,10 +3102,12 @@ body::before {
   text-overflow: ellipsis;
   color: #fff;
 }
+
 .pool-card-stats {
   font-size: 0.7rem;
   color: #94a3b8;
 }
+
 .pool-card-count {
   background: #0f172a;
   color: #0f8;
@@ -3112,18 +3129,24 @@ body::before {
   cursor: pointer;
   color: #cbd5e1;
   font-size: 0.9rem;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: pan-y;
 }
+
 .deck-list-item:hover {
   background: #cc0000;
   color: #fff;
   border-color: #ff0000;
 }
+
 .deck-list-item .dl-name {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   flex: 1;
 }
+
 .deck-list-item .dl-count {
   font-weight: bold;
   color: var(--accent-gold);
