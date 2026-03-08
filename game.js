@@ -25,6 +25,7 @@ class Player {
         this.name = name;
         this.isHuman = isHuman;
         this.lp = 4000;
+        this.deck = [];
         this.hand = [];
         this.fieldMonster = [null]; // 1対1: 最大1枚
         this.fieldMagic = [null];   // 1対1: 最大1枚
@@ -142,7 +143,13 @@ class GameState {
     }
 
     drawCard(player) {
-        const card = getRandomCard();
+        if (player.deck.length === 0) {
+            this.log(`【${player.name}】のデッキが0枚です！ドローできません！`);
+            // デッキアウトで敗北処理を入れることも可能だが、ここでは単純に引けないだけにする
+            return null;
+        }
+
+        const card = player.deck.shift(); // デッキのトップから引く
         player.hand.push(card);
 
         // アニメーション再生（自身の場合のみ、または両方）
@@ -262,31 +269,37 @@ let _awaitingAttackTargetIdx = -1; // 攻撃対象選択中の自分のモンス
 // タイトル画面から呼ばれる初期化関数
 // ===============================
 function startNormalGame() {
-    document.getElementById('title-screen').style.display = 'none';
-    document.getElementById('game-screen').style.display = 'flex';
-    document.getElementById('gameover-overlay').style.display = 'none';
-    clearLog();
-    updateLayoutDirection(true); // P1を手前(下)に
-    initGame(MODE.NORMAL);
+    showDeckSelectionOverlay((selectedDeck) => {
+        document.getElementById('title-screen').style.display = 'none';
+        document.getElementById('game-screen').style.display = 'flex';
+        document.getElementById('gameover-overlay').style.display = 'none';
+        clearLog();
+        updateLayoutDirection(true); // P1を手前(下)に
+        initGame(MODE.NORMAL, selectedDeck);
+    });
 }
 
 function startTestGame() {
-    document.getElementById('title-screen').style.display = 'none';
-    document.getElementById('game-screen').style.display = 'flex';
-    document.getElementById('gameover-overlay').style.display = 'none';
-    clearLog();
-    updateLayoutDirection(true); // P1を手前(下)に
-    initGame(MODE.TEST);
+    showDeckSelectionOverlay((selectedDeck) => {
+        document.getElementById('title-screen').style.display = 'none';
+        document.getElementById('game-screen').style.display = 'flex';
+        document.getElementById('gameover-overlay').style.display = 'none';
+        clearLog();
+        updateLayoutDirection(true); // P1を手前(下)に
+        initGame(MODE.TEST, selectedDeck);
+    });
 }
 
 function startCPUGame() {
-    document.getElementById('title-screen').style.display = 'none';
-    document.getElementById('game-screen').style.display = 'flex';
-    document.getElementById('gameover-overlay').style.display = 'none';
-    clearLog();
-    // CPU戦はプレイヤーがP1、CPUがP2
-    updateLayoutDirection(true);
-    initGame(MODE.CPU);
+    showDeckSelectionOverlay((selectedDeck) => {
+        document.getElementById('title-screen').style.display = 'none';
+        document.getElementById('game-screen').style.display = 'flex';
+        document.getElementById('gameover-overlay').style.display = 'none';
+        clearLog();
+        // CPU戦はプレイヤーがP1、CPUがP2
+        updateLayoutDirection(true);
+        initGame(MODE.CPU, selectedDeck);
+    });
 }
 
 function goToTitle() {
@@ -311,8 +324,59 @@ function clearLog() {
 // ===============================
 // ゲーム初期化
 // ===============================
-function initGame(mode) {
+// ヘルパー: 配列をシャッフル
+function shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+}
+
+// ヘルパー: 指定DeckIdリストから実体デッキを生成
+function buildDeckFromIds(cardIds) {
+    const deckCards = [];
+    cardIds.forEach(id => {
+        const cardObj = ALL_CARDS.find(c => c.id === id);
+        if (cardObj) {
+            deckCards.push(Object.assign({}, cardObj));
+        }
+    });
+    return deckCards;
+}
+
+// ヘルパー: CPU用ランダムデッキ生成 (30枚)
+function buildRandomDeckForCPU() {
+    const deckCards = [];
+    for (let i = 0; i < 30; i++) {
+        deckCards.push(getRandomCard());
+    }
+    return deckCards;
+}
+
+function initGame(mode, selectedDeck) {
     gs = new GameState(mode);
+
+    // デッキの設定
+    if (selectedDeck && selectedDeck.cards) {
+        gs.player1.deck = buildDeckFromIds(selectedDeck.cards);
+    } else {
+        // 万が一選ばれなかった場合のフェールセーフ
+        gs.player1.deck = buildRandomDeckForCPU();
+    }
+    shuffleArray(gs.player1.deck);
+
+    if (mode === MODE.CPU) {
+        // CPUは毎回ランダムな30枚デッキ（将来的にCPU専用デッキを持たせても良い）
+        gs.player2.deck = buildRandomDeckForCPU();
+        shuffleArray(gs.player2.deck);
+    } else if (mode === MODE.TEST) {
+        gs.player2.deck = buildRandomDeckForCPU();
+        shuffleArray(gs.player2.deck);
+    } else {
+        // LOCAL対戦時は同じデッキを借す or 適当に
+        gs.player2.deck = buildRandomDeckForCPU();
+        shuffleArray(gs.player2.deck);
+    }
 
     // 先攻後攻ランダム決定
     const first = Math.random() < 0.5;
